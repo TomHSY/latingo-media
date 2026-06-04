@@ -4,7 +4,7 @@ export default function Hero() {
   const { ref, inView } = useInView(0.1)
 
   return (
-    <section className="relative min-h-[85vh] md:min-h-[70vh] flex items-end justify-center">
+    <section className="relative min-h-screen md:min-h-[88vh] flex items-center justify-center">
       <img
         src="/images/hero-dance.png"
         alt="Ambiance soirée danse latine"
@@ -14,7 +14,7 @@ export default function Hero() {
 
       <div
         ref={ref}
-        className={`relative z-10 max-w-2xl mx-auto px-4 pb-16 md:pb-24 text-center transition-all duration-700 ${
+        className={`relative z-10 max-w-2xl mx-auto px-4 pt-28 pb-12 md:pt-36 md:pb-16 text-center transition-all duration-700 ${
           inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
         }`}
       >
