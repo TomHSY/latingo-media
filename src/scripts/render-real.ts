@@ -1,0 +1,137 @@
+﻿/**
+ * Render carousel + story with REAL events from the API.
+ * Run with: npm run render:real
+ */
+import React from 'react';
+import path from 'path';
+import fs from 'fs';
+import { renderToImage, closeBrowser } from '../renderer/render';
+import { fetchWeekendEvents, fetchEvents } from '../api/client';
+import { CoverSlide, EventSlide, ClosingSlide } from '../templates/weekly-digest';
+import { EventStory } from '../templates/ce-soir';
+import type { MediaEvent } from '../types';
+
+const OUTPUT_DIR = path.resolve(__dirname, '..', '..', 'output', 'real');
+const logoBase64 = fs.readFileSync(path.resolve(__dirname, '..', 'assets', 'icon-text.png')).toString('base64');
+const pinBase64 = fs.readFileSync(path.resolve(__dirname, '..', '..', 'pin_large.png')).toString('base64');
+
+async function main() {
+  console.log('\u{1F517} Fetching real events from api.latingo.fr...\n');
+
+  let events = await fetchWeekendEvents();
+
+  if (events.length === 0) {
+    console.log('  No weekend events, fetching next 14 days...');
+    const now = new Date();
+    const twoWeeks = new Date(now);
+    twoWeeks.setDate(now.getDate() + 14);
+    events = await fetchEvents({
+      date_from: now.toISOString(),
+      date_to: twoWeeks.toISOString(),
+      sort_by: 'date_asc',
+    });
+  }
+
+  console.log("  Found " + events.length + " events\n");
+
+  if (events.length === 0) {
+    console.log('\u274C No events found. Cannot render.');
+    process.exit(1);
+  }
+
+  // Sort by RSVP (desc), then pick top 4 with city diversity
+  const sorted = [...events].sort((a, b) => (b.rsvp_count || 0) - (a.rsvp_count || 0));
+  const selected = selectDiverseEvents(sorted, 4);
+
+  // Determine date range from actual events
+  const dates = events.map((e) => new Date(e.start_datetime));
+  const startDate = new Date(Math.min(...dates.map((d) => d.getTime())));
+  const endDate = new Date(Math.max(...dates.map((d) => d.getTime())));
+
+  console.log("  Selected " + selected.length + " events for carousel:");
+  selected.forEach((e) => console.log("    \u2022 " + e.title + " (" + e.city + ")"));
+  console.log('');
+
+  // --- COVER SLIDE ---
+  console.log('  \u2192 Rendering cover slide...');
+  await renderToImage({
+    format: 'carousel',
+    outputPath: path.join(OUTPUT_DIR, 'carousel', '01-cover.png'),
+    element: React.createElement(CoverSlide, {
+      startDay: startDate.getDate(),
+      endDay: endDate.getDate(),
+      monthName: startDate.toLocaleDateString('fr-FR', { month: 'long' }).toUpperCase(),
+      logoBase64,
+    }),
+  });
+
+  // --- EVENT SLIDES ---
+  for (let i = 0; i < selected.length; i++) {
+    const event = selected[i];
+    console.log("  \u2192 Rendering event slide " + (i + 1) + ": " + event.title + "...");
+
+    await renderToImage({
+      format: 'carousel',
+      outputPath: path.join(OUTPUT_DIR, 'carousel', "0" + (i + 2) + "-event.png"),
+      element: React.createElement(EventSlide, { event, pinBase64 }),
+    });
+  }
+
+  // --- CLOSING SLIDE ---
+  console.log('  \u2192 Rendering closing slide...');
+  const remaining = events.length - selected.length;
+  await renderToImage({
+    format: 'carousel',
+    outputPath: path.join(OUTPUT_DIR, 'carousel', "0" + (selected.length + 2) + "-closing.png"),
+    element: React.createElement(ClosingSlide, { remaining, logoBase64 }),
+  });
+
+  // --- STORIES ---
+  for (let i = 0; i < selected.length; i++) {
+    const event = selected[i];
+    console.log("  \u2192 Rendering story " + (i + 1) + ": " + event.title + "...");
+
+    await renderToImage({
+      format: 'story',
+      outputPath: path.join(OUTPUT_DIR, 'stories', "0" + (i + 1) + "-story.png"),
+      element: React.createElement(EventStory, { event, pinBase64 }),
+    });
+  }
+
+  await closeBrowser();
+  console.log('\n\u2705 All renders complete!');
+  console.log('   Check output at: ' + OUTPUT_DIR);
+}
+
+/**
+ * Select events with city diversity - avoid 2 events from the same city.
+ */
+function selectDiverseEvents(sorted: MediaEvent[], count: number): MediaEvent[] {
+  const selected: MediaEvent[] = [];
+  const usedCities = new Set<string>();
+
+  for (const event of sorted) {
+    if (selected.length >= count) break;
+    const city = event.city || '';
+    if (!usedCities.has(city) || selected.length >= count - 1) {
+      selected.push(event);
+      usedCities.add(city);
+    }
+  }
+
+  if (selected.length < count) {
+    for (const event of sorted) {
+      if (selected.length >= count) break;
+      if (!selected.includes(event)) {
+        selected.push(event);
+      }
+    }
+  }
+
+  return selected;
+}
+
+main().catch((err) => {
+  console.error('\u274C Render failed:', err);
+  process.exit(1);
+});

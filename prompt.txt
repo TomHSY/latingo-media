@@ -1,0 +1,732 @@
+LatinGo Autonomous Media Engine — System Design Objective
+
+You are helping design and implement the media automation architecture for LatinGo, a local SBK (Salsa, Bachata, Kizomba) mobile application built with:
+
+- Frontend: React Native (Expo) — mobile app
+- Backend: FastAPI (Python) — REST API
+- Database: PostgreSQL (AWS RDS, eu-north-1)
+- Hosting: AWS Elastic Beanstalk
+- Image storage: Cloudflare R2
+- Scraper: AWS Lambda + GPT-4 extraction
+- Admin: React + Vite + Tailwind CSS
+
+Product Context
+
+LatinGo helps users discover nearby SBK dance events:
+
+- Salsa
+- Bachata
+- Kizomba
+- Zouk
+- Semba
+- West Coast Swing
+- Tango argentin
+
+The app currently includes:
+
+- Event list with filters (dance style, city, GPS radius, date range)
+- Map view with colored pins
+- Event detail pages (image, description, location, dance type pills, ticket link)
+- Personalized alerts (by location, dance type, radius, frequency)
+- Event sharing (formatted text message)
+- RSVP system (interested / going)
+- User profiles/login
+- Push notifications (Expo) + email digests (Resend)
+- Admin dashboard (React + Vite + Tailwind)
+- Facebook scraping/import pipeline (Lambda + GPT extraction)
+- Event suggestions from users
+
+The initial market is:
+
+- Southwest France (~150km zone)
+- Basque Coast (Bayonne, Biarritz, Anglet, Saint-Jean-de-Luz, Hendaye)
+- Landes (Dax, Mont-de-Marsan, Hossegor)
+- Béarn (Pau, Tarbes)
+- Extended reach: Bordeaux
+
+The audience is mostly:
+
+- 30-60 years old
+- local dance community
+- Facebook/WhatsApp users
+- practical rather than tech-oriented
+
+The brand positioning is:
+
+«“The simplest and most trusted way to discover local SBK events.”»
+
+The communication style must remain:
+
+- useful
+- neutral
+- modern
+- local
+- concise
+- community-oriented
+
+Avoid:
+
+- startup jargon
+- hype marketing
+- influencer-style branding
+- aggressive growth tactics
+- overcomplicated content
+
+---
+
+Core Strategic Goal
+
+Help design and build a fully autonomous local media engine capable of transforming the event database into automatically generated:
+
+- Instagram carousels
+- Instagram stories
+- Facebook posts
+- short digest videos later
+
+with:
+
+- ZERO human interaction
+- highly consistent branding
+- scalable visual generation
+- repeatable templates
+- minimal operational cost
+
+The goal is NOT AI hype.
+
+The goal is:
+
+«Turn LatinGo’s event database into a scalable local media infrastructure.»
+
+---
+
+Important Realization
+
+The event database itself already contains most of the content value.
+
+The main bottleneck is NOT copywriting.
+
+The bottleneck is:
+
+- visual production
+- repetitive content formatting
+- media generation consistency
+
+Therefore:
+the architecture should prioritize:
+
+- programmatic media rendering
+- deterministic template systems
+- automated asset generation
+
+NOT:
+
+- AI-generated creative storytelling.
+
+NOTE : bottleneck would also be how to choose the best communication choices on Instagram and Facebook, especially when other event gatherers/communicators are already present in the social media dancing scene. We need to find the best way to leverage on LatinGo's strenghts and added-value.
+
+---
+
+Desired Architecture
+
+Source of Truth
+
+PostgreSQL event database, running in AWS Elastic Beanstalk (eu-north-1).
+
+Actual Event model (SQLAlchemy):
+
+{
+  "id": "uuid",
+  "title": "string (required)",
+  "description": "string | null",
+  "start_datetime": "datetime UTC (required)",
+  "end_datetime": "datetime UTC (required)",
+  "latitude": "float | null",
+  "longitude": "float | null",
+  "address": "string | null",
+  "city": "string | null",
+  "image_url": "string | null (R2 public URL or Facebook proxy URL)",
+  "source_url": "string | null (Facebook event URL, unique)",
+  "website_url": "string | null",
+  "ticket_url": "string | null",
+  "created_by": "user_id (FK)",
+  "created_at": "datetime UTC",
+  "dance_types": [
+    { "id": "uuid", "slug": "salsa", "label_fr": "Salsa", "is_active": true }
+  ]
+}
+
+IMPORTANT: dance_types is a MANY-TO-MANY relationship (not a single string).
+A single event often has multiple dance types (e.g. "Salsa + Bachata + Kizomba").
+Templates must handle 1 to 7 dance type pills per event.
+
+Additional data available per event:
+- rsvp_count (integer) — number of users interested/going. Can be used as a "popularity" signal for content selection.
+
+---
+
+API Endpoint for Media Pipeline
+
+The existing REST API already supports everything the media pipeline needs:
+
+GET /events?date_from=<ISO>&date_to=<ISO>&sort_by=date_asc
+
+Available query params:
+- city: string (ilike filter)
+- dance_type: string (slug, e.g. "salsa")
+- date_from: datetime ISO
+- date_to: datetime ISO
+- lat / lng / radius_km: GPS-based radius filter (Haversine)
+- sort_by: "date_asc" | "date_desc" | "newest"
+- include_past: boolean (default false)
+
+Response includes full dance_types[] array with slug and label_fr per event.
+
+Example query for weekend digest:
+GET /events?date_from=2026-05-29T00:00:00Z&date_to=2026-05-31T23:59:59Z&sort_by=date_asc
+
+API base URL: https://api.latingo.fr
+Auth: POST /auth/login → Bearer token (admin account needed for full access)
+
+---
+
+Orchestration Layer
+
+Use:
+
+- n8n
+
+Responsibilities:
+
+- scheduling workflows
+- querying DB
+- orchestrating generation pipeline
+- calling APIs
+- publishing generated assets
+
+---
+
+Media Rendering Engine
+
+The system should use:
+
+- React
+- HTML/CSS templates
+
+NOT Canva.
+
+Reason:
+Canva is human-oriented, while this system requires:
+
+- full automation
+- programmable rendering
+- reusable layouts
+- deterministic outputs
+
+---
+
+Rendering Pipeline
+
+The workflow should be:
+
+Database
+↓
+n8n workflow
+↓
+JSON formatting
+↓
+React media templates
+↓
+Puppeteer/Playwright rendering
+↓
+PNG/JPEG generation
+↓
+Meta API publication OR Manual at the beginning
+
+NOTE : Where and how should the master context reside within all of this ?
+
+---
+
+Rendering Technologies
+
+Use:
+
+- React
+- HTML/CSS
+- Puppeteer or Playwright
+
+Potentially later:
+
+- Remotion for videos
+
+The rendering engine should generate:
+
+- portrait stories
+- square posts
+- Instagram carousels
+- map-based digest visuals
+- future digest videos
+
+---
+
+Visual Philosophy
+
+The visual system must be:
+
+- minimal
+- elegant
+- highly readable
+- mobile-first
+- repeatable
+- template-driven
+
+Avoid:
+
+- flashy latin aesthetics
+- cluttered layouts
+- overdesigned visuals
+- excessive effects
+
+Design principles:
+
+- strong typography hierarchy
+- consistent spacing
+- fixed layouts
+- data-driven rendering
+
+Only dynamic elements should change:
+
+- dates
+- event names
+- cities
+- event images
+
+---
+
+AI Usage Philosophy
+
+LLMs should NOT be the core rendering system.
+
+AI should only be used for lightweight editorial tasks such as:
+
+- generating headlines
+- selecting highlighted events
+- summarizing event groups
+- generating short captions
+- slight wording variations
+
+Most of the pipeline should remain deterministic and template-driven.
+
+---
+
+Initial Automation Target
+
+The first fully automated workflow should be:
+
+Weekly Digest Pipeline
+
+Every Thursday:
+
+1. Query weekend events
+2. Group events by day
+3. Render:
+   - Instagram carousel
+   - Instagram stories
+   - Facebook post visuals
+4. Generate lightweight captions
+5. Publish automatically
+
+WITHOUT human validation or few
+
+---
+
+Expected Outputs
+
+Examples:
+
+- “Where to dance this weekend?”
+- “3 Bachata parties this Saturday”
+- “SBK events around Bayonne”
+
+The tone should remain:
+
+- informative
+- concise
+- local
+- useful
+
+NOT:
+
+- hype
+- entertainment-first
+- influencer-oriented
+
+---
+
+Social Platform Automation
+
+Target platforms:
+
+- Instagram Business
+- Facebook Pages
+
+Use:
+
+- Meta Graph API or manual
+
+The system should eventually:
+
+- publish automatically
+- schedule automatically
+- generate media assets automatically
+
+---
+
+Long-Term Vision
+
+LatinGo should evolve from:
+
+«a local event app»
+
+into:
+
+«a fully autonomous local SBK media infrastructure.»
+
+The long-term strategic asset is:
+
+- the event database
+- event distribution workflows
+- automated local media generation
+- community trust
+
+NOT:
+
+- the mobile frontend itself.
+
+---
+
+Your Task
+
+Help design / implement:
+
+- the complete architecture
+- media rendering engine
+- React template system
+- automation workflows
+- file structures
+- rendering pipeline
+- n8n orchestration
+- API interactions
+- scaling strategy
+- implementation roadmap
+
+while remaining:
+
+- pragmatic
+- lightweight
+- scalable
+- maintainable
+- aligned with the actual business needs of a local SBK event platform. 
+
+ASK QUESTIONS TO USER IF NECESSARY !
+
+---
+
+Dance Type Taxonomy (Fixed, 7 types)
+
+The system has exactly 7 dance types with fixed slugs and per-type brand accent colors:
+
+| slug             | label_fr           | accent color | usage                    |
+|------------------|--------------------|--------------|--------------------------|
+| salsa            | Salsa              | #FF6B5A      | Coral-red                |
+| bachata          | Bachata            | #FFBF47      | Gold                     |
+| kizomba          | Kizomba            | #B98EFF      | Purple                   |
+| zouk             | Zouk               | #5CC8F5      | Sky blue                 |
+| west-coast-swing | West Coast Swing   | #5EE8B7      | Mint                     |
+| semba            | Semba              | #FF7070      | Warm red                 |
+| tango-argentin   | Tango argentin     | #F5A855      | Amber                    |
+
+Background colors (18% opacity variants):
+- salsa: rgba(232,67,45,0.18)
+- bachata: rgba(245,166,35,0.18)
+- kizomba: rgba(124,58,237,0.18)
+- zouk: rgba(14,165,233,0.18)
+- west-coast-swing: rgba(16,185,129,0.18)
+- semba: rgba(220,38,38,0.18)
+- tango-argentin: rgba(180,83,9,0.18)
+
+Default fallback (unknown slug): #FF4E3A / rgba(255,78,58,0.18)
+
+Each event slide/card in the media templates should be color-coded by its dance types (using pill/tag components).
+
+---
+
+Noche Design System (Active Theme — Source of Truth for All Visuals)
+
+The app uses a dark theme called "Noche". ALL media templates must use these exact tokens:
+
+Colors:
+  bg:        #0F0F14   (deep dark background)
+  surface:   #1C1C24   (card/modal backgrounds)
+  raised:    #272733   (elevated surfaces, inputs)
+  border:    #2E2E3A   (subtle borders/dividers)
+  coral:     #FF4E3A   (PRIMARY accent — CTAs, highlights, logo)
+  gold:      #FFB830   (SECONDARY accent — dates, badges, featured tags)
+  text:      #F5F0EA   (primary text — warm off-white)
+  secondary: #9B97A3   (secondary text)
+  muted:     #5C5968   (disabled/hint text)
+  tabbar:    #14141A   (darkest level)
+
+Additional utility colors:
+  success:   #2ECC71
+  error:     #FF4E3A
+  overlay:   rgba(0,0,0,0.65)
+  white:     #FFFFFF
+  black:     #000000
+
+Typography:
+  Font family: DM Sans (Google Fonts)
+  Weights: 400 (Regular), 500 (Medium), 600 (SemiBold), 700 (Bold), 800 (ExtraBold)
+
+  Hierarchy:
+    hero:    ExtraBold 34px, letter-spacing -0.5, lineHeight 40
+    h1:      Bold 26px, letter-spacing -0.3, lineHeight 32
+    h2:      Bold 20px, letter-spacing -0.2, lineHeight 26
+    body:    Regular 16px
+    caption: Regular 12-14px
+
+Spacing scale:
+  xs: 4px | sm: 8px | md: 12px | base: 16px | lg: 20px | xl: 24px | xxl: 32px | xxxl: 48px
+
+The visual identity is:
+  - Dark-first (all backgrounds are deep dark)
+  - Coral accent on key elements (LatinGo brand color)
+  - Warm off-white text (#F5F0EA, not pure white)
+  - Clean, minimal, strong typographic hierarchy
+  - Dance type pills with colored text on semi-transparent dark backgrounds
+
+NOTE: 5 themes exist (noche, brisa, fuego, medianoche, arena) but Noche is the active and public-facing one. Media templates should use Noche tokens as constants, not hardcoded hex everywhere — keep tokens referenceable for potential future theme variants.
+
+---
+
+Brand Identity Details
+
+- App name: LatinGo (not LatinConnect)
+- Domain: latingo.fr
+- API: api.latingo.fr
+- Bundle ID: fr.latingo.app
+- Notification color: #FF4E3A
+- From email: LatinGo <noreply@latingo.fr>
+- Contact: contact@latingo.fr
+- App icon: exists as icon.png, icon-text.png (logo with text), adaptive-icon.png
+- Splash background: #0F0F14
+- UI mode: forced dark (userInterfaceStyle: "dark")
+- Expo / React Native app (mobile)
+- Admin dashboard: React + Vite + Tailwind (noche-* custom classes)
+
+Logo/watermark: icon-text.png should be placed as a subtle watermark/footer on all generated media templates.
+
+---
+
+Language: Everything in French
+
+ALL media content (captions, text on visuals, stories, etc.) MUST be in French.
+
+Date format examples:
+- "Samedi 30 mai"
+- "20h30 → 23h00"
+- "Ce week-end"
+- "Vendredi & Samedi"
+
+Day names: lundi, mardi, mercredi, jeudi, vendredi, samedi, dimanche
+Month names: janvier, février, mars, avril, mai, juin, juillet, août, septembre, octobre, novembre, décembre
+
+French locale must be used for all date rendering (fr-FR).
+
+---
+
+Existing Share Template (Approved Tone)
+
+The app already has an event-sharing format that defines the approved voice:
+
+🎶 {title} — {date in French}
+📍 {city} · {address} · {startTime} → {endTime}
+💃 {dance_types joined by " · "}
+
+Découvre cet événement sur LatinGo !
+🎟 {ticket_url}
+
+Captions generated by the media pipeline should follow this same tone: informative, concise, emoji-structured, French.
+
+---
+
+Image Infrastructure
+
+Event images come from two sources:
+1. Facebook scraping → proxied through Cloudflare Worker (latingo-img-proxy)
+   Format: https://latingo-img-proxy.tomhadrian-sy.workers.dev/?url={encoded_fb_url}
+2. Direct uploads → Cloudflare R2 bucket
+   Public URL base: https://pub-0a74468ba5af4a029f562126cdb5944f.r2.dev/{key}
+   Bucket name: dance-app-event-images
+
+Image quality varies significantly:
+- Some are high-res event posters (1080px+)
+- Some are small/blurry Facebook thumbnails
+- Some are NULL (no image at all)
+
+The rendering templates MUST handle all 3 cases gracefully:
+- High quality → use as background/hero
+- Low quality → use smaller or with overlay blur
+- Missing → use a branded fallback pattern (Noche colors + dance type color accent)
+
+Generated media assets should also be stored on R2 (same infra, reuse existing upload logic: resize to max appropriate dimensions, JPEG/PNG).
+
+---
+
+Critical Gap: No Deep Linking
+
+Currently there is NO web frontend and NO way to link from an Instagram/Facebook post to a specific event in the app.
+
+Implications for media pipeline:
+- Posts CANNOT include a direct "view event" link
+- CTA must be generic: "Télécharge LatinGo" or "Lien en bio"
+- A linkinbio page or mini web event viewer may need to be built as part of this project
+- OR the posts simply drive awareness + app downloads in the short term
+
+This should be considered in the architecture as a future component.
+
+---
+
+Existing Digest Logic (Already Proven)
+
+The backend already has a working `send_digest()` function that:
+1. Queries all pending notifications grouped by user
+2. Batch-loads events, users, push tokens
+3. Builds email digests with event lists
+4. Sends via Resend API + Expo Push
+
+The social media pipeline is essentially the PUBLIC-FACING version of this same logic:
+- Same data source
+- Same grouping logic (by day, by city, by dance type)
+- Different output: visual media instead of email HTML
+
+The email digest template already uses DM Sans font and structures events as: title + date + city.
+
+---
+
+Scraper Pipeline & Event Freshness
+
+Events flow into the database via:
+Google Sheet (curated URLs) → Lambda scraper → Facebook HTML parsing → GPT extraction → API POST → PostgreSQL
+
+Key timing facts:
+- Events are scraped/imported throughout the week
+- Most events are added to DB 2-7 days before they happen
+- Thursday generation for weekend content makes perfect sense (data already present)
+- Some events are multi-day (festivals) — start_datetime and end_datetime can span several days
+
+Image processing during scrape:
+- Facebook cover images are downloaded, resized (max 800px), uploaded to R2
+- Some events use poster images extracted via GPT vision from Google Drive
+
+---
+
+Geographic Context
+
+Target zone: ~150km stretch in Southwest France
+
+Typical cities in the database:
+- Bayonne, Biarritz, Anglet (Basque Coast)
+- Saint-Jean-de-Luz, Hendaye
+- Pau, Tarbes (Béarn)
+- Dax, Mont-de-Marsan, Hossegor (Landes)
+- Bordeaux (extended reach)
+
+Coordinates center: approximately 43.5°N, -1.5°W
+
+Map-based digest visuals could show a regional map with colored pins per dance type.
+GPS radius filtering is built-in (Haversine formula in PostgreSQL).
+
+---
+
+Competitive Positioning for Social Media
+
+Context on the local social media dance scene:
+- Local dance schools and associations already post their own events on Facebook/Instagram
+- Some aggregator pages exist but are manual and inconsistent
+- Facebook groups ("Danse SBK Pays Basque", etc.) are the current reference
+
+LatinGo's competitive edge for social media:
+- AGGREGATION: all events in one place (not just one school's events)
+- RELIABILITY: data is structured, verified, always up-to-date
+- CONSISTENCY: same format every week, predictable publishing
+- NEUTRALITY: not promoting one organizer over another
+
+Positioning strategy:
+- Be the "service public" of SBK event information
+- Format: "Où danser ce week-end ?" (informational) NOT "Come to this amazing party!" (promotional)
+- Let the completeness and consistency build trust over time
+- Never compete with organizers' own promotion — complement it
+
+Content hierarchy should be:
+1. This week's events (digest format — the primary value)
+2. Highlighted events (high RSVP count or notable)
+3. City-specific stories ("Ce soir à Bayonne")
+4. Dance-type focused ("Les soirées Bachata du mois")
+
+---
+
+Existing Infrastructure (Reusable for Pipeline)
+
+| Component          | What exists                                     | Reuse potential                    |
+|--------------------|-------------------------------------------------|------------------------------------|
+| AWS Lambda         | Scraper runs on Lambda (eu-north-1)            | Could trigger media generation     |
+| Cloudflare R2      | Image storage bucket + public URL              | Store generated media              |
+| Cloudflare Worker  | Image proxy for Facebook URLs                  | Serve event images to templates    |
+| FastAPI            | REST API with full event querying              | Data source for pipeline           |
+| PostgreSQL (RDS)   | Full event DB with coords, dance types, RSVPs  | Source of truth                    |
+| Resend             | Transactional email service                    | Could send internal notifications  |
+| Google Sheets      | Event URL curation + status tracking           | Could log generated media status   |
+| Expo Push          | Push notification infrastructure               | Could notify admin of failures     |
+
+If n8n feels too heavy initially, a simple Lambda cron (CloudWatch Events) could trigger the media pipeline on the same infrastructure — no new services needed.
+
+---
+
+DanceTypePill Visual Pattern
+
+In the app, dance types are rendered as colored pills:
+- Semi-transparent dark background (rgba(0,0,0,0.7))
+- Colored text matching the dance type accent color
+- Small rounded capsule shape
+- Multiple pills side by side when an event has multiple types
+
+This pattern should be directly replicated in media templates for visual consistency with the app.
+
+---
+
+RSVP Data as Content Signal
+
+The EventRSVP model tracks user interest:
+- status: "interested" | "going"
+- Unique constraint per user+event
+
+The rsvp_count is returned with each event in the API response.
+
+Potential uses in media pipeline:
+- "🔥 12 personnes intéressées" badge on popular events
+- Select events to highlight in carousels based on RSVP count
+- Create "Les plus attendus ce week-end" content format
+
+---
+
+Potential Weekly Content Calendar
+
+Based on available data signals:
+
+| Day       | Content type                          | Source                            |
+|-----------|---------------------------------------|-----------------------------------|
+| Thursday  | "Où danser ce week-end ?" carousel   | Weekend events query              |
+| Friday    | Story series: tonight's events        | Same-day events                   |
+| Saturday  | Story: "Ce soir" + city-specific     | Same-day events                   |
+| Monday    | "Recap" or upcoming week teaser       | Past weekend RSVPs / next week    |
+| Ongoing   | Individual event highlight posts      | High RSVP or notable events       |
