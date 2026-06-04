@@ -9,9 +9,9 @@ export default function Navbar() {
         scrolled ? 'bg-surface/95 backdrop-blur-md' : 'bg-transparent'
       }`}
     >
-      <div className="max-w-6xl mx-auto px-5 py-4 flex items-center">
+      <div className="max-w-2xl mx-auto px-5 py-4 flex items-center">
         <a href="#" className="flex items-center gap-3">
-          <img src="/images/icon.png" alt="LatinGo" className="w-14 h-14 rounded-xl" />
+          <img src="/images/icon.png" alt="LatinGo" className="w-16 h-16 rounded-xl" />
           <span className="font-bold text-3xl text-primary-text">LatinGo</span>
         </a>
       </div>
