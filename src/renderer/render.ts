@@ -68,7 +68,8 @@ export async function renderToImage(options: RenderOptions): Promise<string> {
   await page.setViewportSize({ width, height });
 
   // Load the HTML content
-  await page.setContent(fullHtml, { waitUntil: 'networkidle' });
+  // Allow more time for external resources to load (increase from default 30s)
+  await page.setContent(fullHtml, { waitUntil: 'networkidle', timeout: 60000 });
 
   // 3. Screenshot
   const isPng = outputPath.endsWith('.png');

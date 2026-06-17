@@ -1,7 +1,8 @@
 /**
  * Render carousel + stories for a specific week.
- * Usage: npx tsx --use-system-ca src/scripts/render-week.ts 2026-06-01
+ * Usage: npx tsx --use-system-ca src/scripts/render-week.ts 2026-06-01 [--upload]
  * Output: output/week-2026-06-01/carousel/ + output/week-2026-06-01/stories/
+ * --upload: also upload to Google Drive after rendering
  */
 import React from 'react';
 import path from 'path';
@@ -12,6 +13,7 @@ import { fetchEvents } from '../api/client';
 import { CoverSlide, EventSlide, ClosingSlide } from '../templates/weekly-digest';
 import { EventStory } from '../templates/ce-soir';
 import { generateCarouselCaption } from '../publisher/caption';
+import { uploadToDrive } from '../publisher/gdrive';
 import type { MediaEvent } from '../types';
 
 const logoBase64 = fs.readFileSync(path.resolve(__dirname, '..', 'assets', 'icon-text.png')).toString('base64');
@@ -107,14 +109,23 @@ async function main() {
     element: React.createElement(ClosingSlide, { remaining, logoBase64 }),
   });
 
-  // --- STORIES ---
-  for (let i = 0; i < selected.length; i++) {
-    const event = selected[i];
-    console.log(`  → Rendering story ${i + 1}: ${event.title}...`);
+  // --- STORIES (all events, grouped by day) ---
+  const DAYS_FR = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+  const dayCounters: Record<string, number> = {};
+
+  for (let i = 0; i < events.length; i++) {
+    const event = events[i];
+    const eventDate = new Date(event.start_datetime);
+    const dayName = DAYS_FR[eventDate.getDay()];
+    dayCounters[dayName] = (dayCounters[dayName] || 0) + 1;
+    const dayIdx = String(dayCounters[dayName]).padStart(2, '0');
+    const safeCity = (event.city || 'unknown').replace(/[^a-zA-Z0-9À-ÿ\-]/g, '_');
+    const filename = `${dayName}-${dayIdx}-${safeCity}.png`;
+    console.log(`  → Rendering story [${i + 1}/${events.length}] ${filename}...`);
 
     await renderToImage({
       format: 'story',
-      outputPath: path.join(OUTPUT_DIR, 'stories', `0${i + 1}-story.png`),
+      outputPath: path.join(OUTPUT_DIR, 'stories', filename),
       element: React.createElement(EventStory, { event, pinBase64 }),
     });
   }
@@ -130,10 +141,17 @@ async function main() {
 
   console.log(`\n✅ All renders complete!`);
   console.log(`   Carousel: output/${folderName}/carousel/ (${selected.length + 2} slides)`);
-  console.log(`   Stories:  output/${folderName}/stories/ (${selected.length} stories)`);
+  console.log(`   Stories:  output/${folderName}/stories/ (${events.length} stories)`);
   console.log(`   Caption:  output/${folderName}/caption.txt`);
   console.log(`\n--- Caption ---\n`);
   console.log(caption);
+
+  // --- GOOGLE DRIVE UPLOAD ---
+  if (process.argv.includes('--upload')) {
+    console.log('\n☁️  Uploading to Google Drive...\n');
+    const driveUrl = await uploadToDrive(OUTPUT_DIR, folderName);
+    console.log(`\n✅ Uploaded! ${driveUrl}`);
+  }
 }
 
 /**
