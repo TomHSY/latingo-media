@@ -120,6 +120,7 @@ export interface MediaEvent {
 Helpers in `src/api/client.ts`:
 
 ```typescript
+fetchWeekendEvents()        // Fri–Sun window in Europe/Paris → date_from / date_to
 activeEventsOnly(events)    // for carousel selection
 cancelledEventsOnly(events) // for cancelled story renders
 ```

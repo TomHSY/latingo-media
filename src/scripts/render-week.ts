@@ -15,6 +15,8 @@ import { EventStory } from '../templates/ce-soir';
 import { generateCarouselCaption } from '../publisher/caption';
 import { uploadToDrive } from '../publisher/gdrive';
 import type { MediaEvent } from '../types';
+import { getParisCoverParts } from '../utils/dates';
+import { getParisWeekdayIndex } from '../utils/paris-time';
 
 const logoBase64 = fs.readFileSync(path.resolve(__dirname, '..', 'assets', 'icon-text.png')).toString('base64');
 const pinBase64 = fs.readFileSync(path.resolve(__dirname, '..', '..', 'pin_large.png')).toString('base64');
@@ -75,15 +77,18 @@ async function main() {
   selected.forEach((e) => console.log(`    • ${e.title} (${e.city})`));
   console.log('');
 
+  const startCover = getParisCoverParts(startDate);
+  const endCover = getParisCoverParts(endDate);
+
   // --- COVER SLIDE ---
   console.log('  → Rendering cover slide...');
   await renderToImage({
     format: 'carousel',
     outputPath: path.join(OUTPUT_DIR, 'carousel', '01-cover.png'),
     element: React.createElement(CoverSlide, {
-      startDay: startDate.getDate(),
-      endDay: endDate.getDate(),
-      monthName: startDate.toLocaleDateString('fr-FR', { month: 'long' }).toUpperCase(),
+      startDay: startCover.day,
+      endDay: endCover.day,
+      monthName: startCover.monthNameUpper,
       logoBase64,
     }),
   });
@@ -116,7 +121,7 @@ async function main() {
   for (let i = 0; i < events.length; i++) {
     const event = events[i];
     const eventDate = new Date(event.start_datetime);
-    const dayName = DAYS_FR[eventDate.getDay()];
+    const dayName = DAYS_FR[getParisWeekdayIndex(eventDate)];
     dayCounters[dayName] = (dayCounters[dayName] || 0) + 1;
     const dayIdx = String(dayCounters[dayName]).padStart(2, '0');
     const safeCity = (event.city || 'unknown').replace(/[^a-zA-Z0-9À-ÿ\-]/g, '_');

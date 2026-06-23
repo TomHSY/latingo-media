@@ -1,5 +1,17 @@
 const PARIS_TZ = 'Europe/Paris';
 
+export { PARIS_TZ };
+
+const WEEKDAY_INDEX: Record<string, number> = {
+  Sun: 0,
+  Mon: 1,
+  Tue: 2,
+  Wed: 3,
+  Thu: 4,
+  Fri: 5,
+  Sat: 6,
+};
+
 const dateTimeFormatter = new Intl.DateTimeFormat('en-CA', {
   timeZone: PARIS_TZ,
   year: 'numeric',
@@ -102,4 +114,42 @@ export function getParisDayBounds(reference = new Date()): { from: string; to: s
   const to = new Date(nextMidnight.getTime() - 1);
 
   return { from: from.toISOString(), to: to.toISOString(), label };
+}
+
+/** 0 = Sunday … 6 = Saturday in Europe/Paris */
+export function getParisWeekdayIndex(reference = new Date()): number {
+  return WEEKDAY_INDEX[getParisDateTime(reference).weekday] ?? 0;
+}
+
+function addParisCalendarDays(label: string, deltaDays: number): string {
+  const [y, m, d] = label.split('-').map(Number);
+  const anchor = findUtcForParisLocal(y, m, d, 12, 0, 0);
+  return getParisDateLabel(new Date(anchor.getTime() + deltaDays * 86400000));
+}
+
+/** Friday 00:00 → Sunday 23:59:59.999 Europe/Paris as UTC ISO strings */
+export function getParisWeekendBounds(reference = new Date()): { from: string; to: string } {
+  const todayLabel = getParisDateLabel(reference);
+  const day = getParisWeekdayIndex(reference);
+
+  let fridayLabel: string;
+  if (day <= 4) {
+    fridayLabel = addParisCalendarDays(todayLabel, 5 - day);
+  } else if (day === 5) {
+    fridayLabel = todayLabel;
+  } else if (day === 6) {
+    fridayLabel = addParisCalendarDays(todayLabel, -1);
+  } else {
+    fridayLabel = addParisCalendarDays(todayLabel, -2);
+  }
+
+  const sundayLabel = addParisCalendarDays(fridayLabel, 2);
+  const [fy, fm, fd] = fridayLabel.split('-').map(Number);
+  const [sy, sm, sd] = sundayLabel.split('-').map(Number);
+
+  const from = findUtcForParisLocal(fy, fm, fd, 0, 0, 0);
+  const sundayNoon = findUtcForParisLocal(sy, sm, sd, 12, 0, 0);
+  const { to } = getParisDayBounds(sundayNoon);
+
+  return { from: from.toISOString(), to: to };
 }

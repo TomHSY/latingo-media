@@ -15,6 +15,7 @@ import { uploadImages } from '../publisher/upload';
 import { publishCarousel, publishStory } from '../publisher/instagram';
 import { publishFacebookAlbum } from '../publisher/facebook';
 import { generateCarouselCaption } from '../publisher/caption';
+import { getParisCoverParts } from '../utils/dates';
 
 const OUTPUT_DIR = path.resolve(__dirname, '..', '..', 'output', 'real');
 const logoBase64 = fs.readFileSync(path.resolve(__dirname, '..', 'assets', 'icon-text.png')).toString('base64');
@@ -61,6 +62,9 @@ async function main() {
   const carouselDir = path.join(OUTPUT_DIR, 'carousel');
   const storiesDir = path.join(OUTPUT_DIR, 'stories');
 
+  const startCover = getParisCoverParts(startDate);
+  const endCover = getParisCoverParts(endDate);
+
   // Cover
   const coverPath = path.join(carouselDir, '01-cover.png');
   console.log('  → Rendering cover...');
@@ -68,9 +72,9 @@ async function main() {
     format: 'carousel',
     outputPath: coverPath,
     element: React.createElement(CoverSlide, {
-      startDay: startDate.getDate(),
-      endDay: endDate.getDate(),
-      monthName: startDate.toLocaleDateString('fr-FR', { month: 'long' }).toUpperCase(),
+      startDay: startCover.day,
+      endDay: endCover.day,
+      monthName: startCover.monthNameUpper,
       logoBase64,
     }),
   });

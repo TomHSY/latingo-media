@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import type { MediaEvent } from '../types';
+import { getParisWeekendBounds } from '../utils/paris-time';
 
 const API_BASE = 'https://api.latingo.fr';
 
@@ -69,30 +70,14 @@ export async function fetchEvents(params: {
 }
 
 /**
- * Fetch this weekend's events (Friday to Sunday).
+ * Fetch this weekend's events (Friday to Sunday, Europe/Paris).
  */
 export async function fetchWeekendEvents(): Promise<MediaEvent[]> {
-  const now = new Date();
-  // Find next Friday (or today if already Fri/Sat/Sun)
-  const day = now.getDay(); // 0=Sun, 5=Fri, 6=Sat
-  let friday = new Date(now);
-  if (day <= 4) {
-    friday.setDate(now.getDate() + (5 - day));
-  } else if (day === 6) {
-    friday.setDate(now.getDate() - 1);
-  } // day === 0 (Sun) → last Friday
-  else {
-    friday.setDate(now.getDate() - 2);
-  }
-  friday.setHours(0, 0, 0, 0);
-
-  const sunday = new Date(friday);
-  sunday.setDate(friday.getDate() + 2);
-  sunday.setHours(23, 59, 59, 0);
+  const { from, to } = getParisWeekendBounds();
 
   return fetchEvents({
-    date_from: friday.toISOString(),
-    date_to: sunday.toISOString(),
+    date_from: from,
+    date_to: to,
     sort_by: 'date_asc',
   });
 }

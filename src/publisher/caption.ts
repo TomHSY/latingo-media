@@ -12,8 +12,16 @@ export async function generateCarouselCaption(
   startDate: Date,
   endDate: Date
 ): Promise<string> {
-  const startStr = startDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
-  const endStr = endDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+  const startStr = startDate.toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    timeZone: 'Europe/Paris',
+  });
+  const endStr = endDate.toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    timeZone: 'Europe/Paris',
+  });
 
   const eventList = events
     .map((e) => {
@@ -21,6 +29,7 @@ export async function generateCarouselCaption(
         weekday: 'long',
         day: 'numeric',
         month: 'long',
+        timeZone: 'Europe/Paris',
       });
       const danceTypes = e.dance_types.map((d) => d.label_fr).join(', ') || 'Danse latine';
       const rsvp = e.rsvp_count ? ` · ${e.rsvp_count} inscrits` : '';
