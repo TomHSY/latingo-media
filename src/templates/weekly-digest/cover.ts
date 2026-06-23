@@ -6,17 +6,17 @@ export interface CoverProps {
   startDay: number;
   endDay: number;
   monthName: string;
-  logoBase64: string;
 }
 
-export function CoverSlide({ startDay, endDay, monthName, logoBase64 }: CoverProps) {
+export function CoverSlide({ startDay, endDay, monthName }: CoverProps) {
   const dateStyle = {
     fontFamily: typography.fontFamily,
     fontWeight: 800,
-    fontSize: '160px',
-    lineHeight: '160px',
+    fontSize: '200px',
+    lineHeight: '200px',
     color: colors.text,
     letterSpacing: '-4px',
+    textAlign: 'center' as const,
   };
 
   return React.createElement(
@@ -28,36 +28,14 @@ export function CoverSlide({ startDay, endDay, monthName, logoBase64 }: CoverPro
         style: {
           flex: 1,
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '32px',
+          textAlign: 'center',
         },
       },
-      React.createElement(
-        'div',
-        {
-          style: {
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transform: 'scale(1.10)',
-            transformOrigin: 'center center',
-          },
-        },
-        React.createElement('div', { style: dateStyle }, `${startDay}-${endDay}`),
-        React.createElement('div', { style: { ...dateStyle, marginTop: '8px' } }, monthName),
-        React.createElement('img', {
-          src: `data:image/png;base64,${logoBase64}`,
-          style: {
-            height: '220px',
-            width: 'auto',
-            objectFit: 'contain',
-            opacity: 0.9,
-            marginTop: '56px',
-          },
-        })
-      )
+      React.createElement('div', { style: dateStyle }, `${startDay}-${endDay}`),
+      React.createElement('div', { style: { ...dateStyle, marginTop: '12px' } }, monthName)
     )
   );
 }

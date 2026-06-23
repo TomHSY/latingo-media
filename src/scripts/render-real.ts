@@ -58,7 +58,6 @@ async function main() {
       startDay: weekCover.startDay,
       endDay: weekCover.endDay,
       monthName: weekCover.monthNameUpper,
-      logoBase64,
     }),
   });
 
