@@ -8,6 +8,10 @@ import 'dotenv/config';
 import { getParisDateTime } from '../utils/paris-time';
 import { shouldRunStories } from '../utils/schedule';
 
+const repoRoot = path.resolve(__dirname, '..', '..');
+const runTsx = path.join(repoRoot, 'scripts', 'run-tsx.mjs');
+const publishStoriesToday = path.join(__dirname, 'publish-stories-today.ts');
+
 const force = process.env.FORCE_PUBLISH === 'stories';
 
 if (!force && !shouldRunStories()) {
@@ -20,10 +24,10 @@ if (!force && !shouldRunStories()) {
 
 console.log(force ? '🚀 Force-running daily stories publish...\n' : '🚀 Scheduled stories publish (12:00 Paris)...\n');
 
-const result = spawnSync(
-  'npx',
-  ['tsx', '--use-system-ca', path.join(__dirname, 'publish-stories-today.ts')],
-  { stdio: 'inherit', env: process.env, shell: true, cwd: path.resolve(__dirname, '..', '..') }
-);
+const result = spawnSync(process.execPath, [runTsx, publishStoriesToday], {
+  stdio: 'inherit',
+  env: process.env,
+  cwd: repoRoot,
+});
 
 process.exit(result.status ?? 1);

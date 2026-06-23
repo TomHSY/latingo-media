@@ -11,6 +11,7 @@ See also [PRD.md](PRD.md) content calendar and [ARCHITECTURE.md](ARCHITECTURE.md
 - Node.js 20+
 - `npm install` and `npx playwright install chromium`
 - Copy [`.env.example`](../.env.example) to `.env` at repo root
+- Scripts run via [`scripts/run-tsx.mjs`](../scripts/run-tsx.mjs): `--use-system-ca` on Windows/macOS only; GitHub Actions (Linux) uses the default CA bundle
 
 ## Manual setup checklist
 

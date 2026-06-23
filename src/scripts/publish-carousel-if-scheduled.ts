@@ -8,6 +8,10 @@ import 'dotenv/config';
 import { getParisDateTime } from '../utils/paris-time';
 import { shouldRunCarousel } from '../utils/schedule';
 
+const repoRoot = path.resolve(__dirname, '..', '..');
+const runTsx = path.join(repoRoot, 'scripts', 'run-tsx.mjs');
+const publishReal = path.join(__dirname, 'publish-real.ts');
+
 const force = process.env.FORCE_PUBLISH === 'carousel';
 
 if (!force && !shouldRunCarousel()) {
@@ -21,13 +25,12 @@ if (!force && !shouldRunCarousel()) {
 console.log(force ? '🚀 Force-running carousel publish...\n' : '🚀 Scheduled carousel publish (Tue 14:00 Paris)...\n');
 
 const result = spawnSync(
-  'npx',
-  ['tsx', '--use-system-ca', path.join(__dirname, 'publish-real.ts')],
+  process.execPath,
+  [runTsx, publishReal],
   {
     stdio: 'inherit',
     env: { ...process.env, CAROUSEL_ONLY: 'true' },
-    shell: true,
-    cwd: path.resolve(__dirname, '..', '..'),
+    cwd: repoRoot,
   }
 );
 

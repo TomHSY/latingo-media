@@ -29,7 +29,7 @@ npx playwright install chromium
 | `npm run preview` | Preview server at localhost:3456 |
 | `npm run typecheck` | TypeScript check |
 
-TLS for `api.latingo.fr` is wired via `tsx --use-system-ca` in npm scripts.
+TLS for `api.latingo.fr`: npm scripts use [`scripts/run-tsx.mjs`](scripts/run-tsx.mjs) — adds `tsx --use-system-ca` on Windows/macOS only; Linux CI uses default CAs.
 
 ## Landing page (`landing/`)
 
