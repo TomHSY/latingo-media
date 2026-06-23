@@ -10,6 +10,15 @@ export interface CoverProps {
 }
 
 export function CoverSlide({ startDay, endDay, monthName, logoBase64 }: CoverProps) {
+  const dateStyle = {
+    fontFamily: typography.fontFamily,
+    fontWeight: 800,
+    fontSize: '160px',
+    lineHeight: '160px',
+    color: colors.text,
+    letterSpacing: '-4px',
+  };
+
   return React.createElement(
     CarouselSlideLayout,
     { showWatermark: false },
@@ -19,22 +28,36 @@ export function CoverSlide({ startDay, endDay, monthName, logoBase64 }: CoverPro
         style: {
           flex: 1,
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '80px',
+          padding: '32px',
         },
       },
-      React.createElement('div', {
-        style: { fontFamily: typography.fontFamily, fontWeight: 800, fontSize: '160px', lineHeight: '160px', color: colors.text, letterSpacing: '-4px' },
-      }, `${startDay}-${endDay}`),
-      React.createElement('div', {
-        style: { fontFamily: typography.fontFamily, fontWeight: 800, fontSize: '160px', lineHeight: '160px', color: colors.text, letterSpacing: '-4px', marginTop: '8px' },
-      }, monthName)
-    ),
-    React.createElement('img', {
-      src: `data:image/png;base64,${logoBase64}`,
-      style: { height: '220px', width: 'auto', objectFit: 'contain', opacity: 0.9, marginBottom: '80px' },
-    })
+      React.createElement(
+        'div',
+        {
+          style: {
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transform: 'scale(1.10)',
+            transformOrigin: 'center center',
+          },
+        },
+        React.createElement('div', { style: dateStyle }, `${startDay}-${endDay}`),
+        React.createElement('div', { style: { ...dateStyle, marginTop: '8px' } }, monthName),
+        React.createElement('img', {
+          src: `data:image/png;base64,${logoBase64}`,
+          style: {
+            height: '220px',
+            width: 'auto',
+            objectFit: 'contain',
+            opacity: 0.9,
+            marginTop: '56px',
+          },
+        })
+      )
+    )
   );
 }

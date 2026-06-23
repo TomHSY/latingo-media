@@ -10,7 +10,7 @@ import { fetchWeekendEvents, fetchEvents } from '../api/client';
 import { CoverSlide, EventSlide, ClosingSlide } from '../templates/weekly-digest';
 import { EventStory } from '../templates/ce-soir';
 import type { MediaEvent } from '../types';
-import { getParisCoverParts } from '../utils/dates';
+import { getParisCalendarWeekCover } from '../utils/paris-time';
 
 const OUTPUT_DIR = path.resolve(__dirname, '..', '..', 'output', 'real');
 const logoBase64 = fs.readFileSync(path.resolve(__dirname, '..', 'assets', 'icon-text.png')).toString('base64');
@@ -43,18 +43,11 @@ async function main() {
   // Sort by RSVP (desc), then pick top 4 with city diversity
   const sorted = [...events].sort((a, b) => (b.rsvp_count || 0) - (a.rsvp_count || 0));
   const selected = selectDiverseEvents(sorted, 4);
-
-  // Determine date range from actual events
-  const dates = events.map((e) => new Date(e.start_datetime));
-  const startDate = new Date(Math.min(...dates.map((d) => d.getTime())));
-  const endDate = new Date(Math.max(...dates.map((d) => d.getTime())));
+  const weekCover = getParisCalendarWeekCover();
 
   console.log("  Selected " + selected.length + " events for carousel:");
   selected.forEach((e) => console.log("    \u2022 " + e.title + " (" + e.city + ")"));
   console.log('');
-
-  const startCover = getParisCoverParts(startDate);
-  const endCover = getParisCoverParts(endDate);
 
   // --- COVER SLIDE ---
   console.log('  \u2192 Rendering cover slide...');
@@ -62,9 +55,9 @@ async function main() {
     format: 'carousel',
     outputPath: path.join(OUTPUT_DIR, 'carousel', '01-cover.png'),
     element: React.createElement(CoverSlide, {
-      startDay: startCover.day,
-      endDay: endCover.day,
-      monthName: startCover.monthNameUpper,
+      startDay: weekCover.startDay,
+      endDay: weekCover.endDay,
+      monthName: weekCover.monthNameUpper,
       logoBase64,
     }),
   });

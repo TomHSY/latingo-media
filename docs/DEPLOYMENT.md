@@ -11,6 +11,8 @@ See also [PRD.md](PRD.md) content calendar and [ARCHITECTURE.md](ARCHITECTURE.md
 | Workflow job | When (automatic) | Content | Instagram output |
 |--------------|------------------|---------|------------------|
 | **carousel** | Tuesday 14:00 Paris | Weekend digest (Fri–Sun events) | 1 feed carousel post |
+
+Cover slide always shows **Monday–Sunday** of the current Paris calendar week (e.g. `22–28 JUIN`), even though event slides are picked from the weekend only.
 | **stories** | Daily 12:00 Paris | All events on **that calendar day** in Paris | 1 story per event (0 if none) |
 
 Important distinctions:
@@ -163,6 +165,7 @@ If `api.latingo.fr` TLS fails on Ubuntu (unlikely), add a `NODE_EXTRA_CA_CERTS` 
 | OpenAI 403 in local dev | Corporate proxy — captions still work on GitHub Actions |
 | Duplicate posts | Re-ran workflow or both manual + scheduled same day |
 | Stories for wrong day | Stories always use **today Paris** — not weekend events |
+| `9007` / "media is not ready for publishing" | Instagram still processing container — fixed by polling `status_code` until `FINISHED` in `instagram.ts` |
 
 ## Facebook
 

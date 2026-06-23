@@ -15,7 +15,7 @@ import { uploadImages } from '../publisher/upload';
 import { publishCarousel, publishStory } from '../publisher/instagram';
 import { publishFacebookAlbum } from '../publisher/facebook';
 import { generateCarouselCaption } from '../publisher/caption';
-import { getParisCoverParts } from '../utils/dates';
+import { getParisCalendarWeekCover } from '../utils/paris-time';
 
 const OUTPUT_DIR = path.resolve(__dirname, '..', '..', 'output', 'real');
 const logoBase64 = fs.readFileSync(path.resolve(__dirname, '..', 'assets', 'icon-text.png')).toString('base64');
@@ -47,10 +47,7 @@ async function main() {
 
   const sorted = [...events].sort((a, b) => (b.rsvp_count || 0) - (a.rsvp_count || 0));
   const selected = selectDiverseEvents(sorted, 4);
-
-  const dates = events.map((e) => new Date(e.start_datetime));
-  const startDate = new Date(Math.min(...dates.map((d) => d.getTime())));
-  const endDate = new Date(Math.max(...dates.map((d) => d.getTime())));
+  const weekCover = getParisCalendarWeekCover();
 
   console.log(`  Selected ${selected.length} events:`);
   selected.forEach((e) => console.log(`    • ${e.title} (${e.city})`));
@@ -62,9 +59,6 @@ async function main() {
   const carouselDir = path.join(OUTPUT_DIR, 'carousel');
   const storiesDir = path.join(OUTPUT_DIR, 'stories');
 
-  const startCover = getParisCoverParts(startDate);
-  const endCover = getParisCoverParts(endDate);
-
   // Cover
   const coverPath = path.join(carouselDir, '01-cover.png');
   console.log('  → Rendering cover...');
@@ -72,9 +66,9 @@ async function main() {
     format: 'carousel',
     outputPath: coverPath,
     element: React.createElement(CoverSlide, {
-      startDay: startCover.day,
-      endDay: endCover.day,
-      monthName: startCover.monthNameUpper,
+      startDay: weekCover.startDay,
+      endDay: weekCover.endDay,
+      monthName: weekCover.monthNameUpper,
       logoBase64,
     }),
   });
@@ -154,7 +148,7 @@ async function main() {
 
   // ── STEP 3: Publish ───────────────────────────────────────────────
   console.log('✍️  Step 3: Generating caption with GPT-4o-mini...\n');
-  const caption = await generateCarouselCaption(selected, startDate, endDate);
+  const caption = await generateCarouselCaption(selected, weekCover.monday, weekCover.sunday);
   console.log('  Caption preview:\n');
   console.log(caption);
   console.log('');

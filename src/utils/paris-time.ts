@@ -153,3 +153,45 @@ export function getParisWeekendBounds(reference = new Date()): { from: string; t
 
   return { from: from.toISOString(), to: to };
 }
+
+export interface ParisCalendarWeekCover {
+  startDay: number;
+  endDay: number;
+  monthNameUpper: string;
+  /** Noon Paris on Monday / Sunday — for captions */
+  monday: Date;
+  sunday: Date;
+}
+
+/**
+ * Cover slide range: Monday–Sunday of the calendar week containing reference (Paris).
+ * Event selection may still use Fri–Sun only; the cover shows the full week (e.g. 22–28).
+ */
+export function getParisCalendarWeekCover(reference = new Date()): ParisCalendarWeekCover {
+  const todayLabel = getParisDateLabel(reference);
+  const day = getParisWeekdayIndex(reference);
+  const daysSinceMonday = day === 0 ? 6 : day - 1;
+  const mondayLabel = addParisCalendarDays(todayLabel, -daysSinceMonday);
+  const sundayLabel = addParisCalendarDays(mondayLabel, 6);
+
+  const [my, mm, md] = mondayLabel.split('-').map(Number);
+  const [sy, sm, sd] = sundayLabel.split('-').map(Number);
+
+  const monday = findUtcForParisLocal(my, mm, md, 12, 0, 0);
+  const sunday = findUtcForParisLocal(sy, sm, sd, 12, 0, 0);
+
+  const monthNameUpper = new Intl.DateTimeFormat('fr-FR', {
+    timeZone: PARIS_TZ,
+    month: 'long',
+  })
+    .format(sunday)
+    .toUpperCase();
+
+  return {
+    startDay: md,
+    endDay: sd,
+    monthNameUpper,
+    monday,
+    sunday,
+  };
+}

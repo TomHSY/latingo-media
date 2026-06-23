@@ -67,9 +67,18 @@ export async function renderToImage(options: RenderOptions): Promise<string> {
 
   await page.setViewportSize({ width, height });
 
-  // Load the HTML content
-  // Allow more time for external resources to load (increase from default 30s)
-  await page.setContent(fullHtml, { waitUntil: 'networkidle', timeout: 60000 });
+  // `networkidle` hangs on remote event images / fonts; `load` + image check is enough.
+  await page.setContent(fullHtml, { waitUntil: 'load', timeout: 30000 });
+  await page.evaluate(() => document.fonts?.ready);
+  await page
+    .waitForFunction(
+      () => {
+        const imgs = Array.from(document.images);
+        return imgs.length === 0 || imgs.every((img) => img.complete);
+      },
+      { timeout: 15000 }
+    )
+    .catch(() => undefined);
 
   // 3. Screenshot
   const isPng = outputPath.endsWith('.png');
