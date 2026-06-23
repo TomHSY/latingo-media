@@ -1,0 +1,70 @@
+name: Publish Instagram
+
+on:
+  schedule:
+    # UTC window around Paris 12:00 (stories) and Tue 14:00 (carousel); scripts guard on Europe/Paris
+    - cron: '0 11,12,13 * * *'
+  workflow_dispatch:
+    inputs:
+      job:
+        description: Job to run (bypasses schedule guard)
+        required: true
+        type: choice
+        options:
+          - carousel
+          - stories
+
+concurrency:
+  group: publish-instagram
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: Publish carousel (if scheduled or manual)
+        if: github.event_name == 'schedule' || github.event.inputs.job == 'carousel'
+        env:
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          INSTAGRAM_USER_ID: ${{ secrets.INSTAGRAM_USER_ID }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DRY_RUN: ${{ secrets.DRY_RUN }}
+          FORCE_PUBLISH: ${{ github.event.inputs.job == 'carousel' && 'carousel' || '' }}
+        run: npm run publish:carousel-if-scheduled
+
+      - name: Publish stories (if scheduled or manual)
+        if: github.event_name == 'schedule' || github.event.inputs.job == 'stories'
+        env:
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          INSTAGRAM_USER_ID: ${{ secrets.INSTAGRAM_USER_ID }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DRY_RUN: ${{ secrets.DRY_RUN }}
+          FORCE_PUBLISH: ${{ github.event.inputs.job == 'stories' && 'stories' || '' }}
+        run: npm run publish:stories-if-scheduled

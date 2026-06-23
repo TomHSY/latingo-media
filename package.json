@@ -9,6 +9,9 @@
     "render:real": "tsx --use-system-ca src/scripts/render-real.ts",
     "render:week": "tsx --use-system-ca src/scripts/render-week.ts",
     "publish:real": "tsx --use-system-ca src/scripts/publish-real.ts",
+    "publish:stories-today": "tsx --use-system-ca src/scripts/publish-stories-today.ts",
+    "publish:carousel-if-scheduled": "tsx --use-system-ca src/scripts/publish-carousel-if-scheduled.ts",
+    "publish:stories-if-scheduled": "tsx --use-system-ca src/scripts/publish-stories-if-scheduled.ts",
     "test:api": "tsx --use-system-ca src/scripts/test-api.ts",
     "typecheck": "tsc --noEmit"
   },

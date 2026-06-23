@@ -98,18 +98,21 @@ async function main() {
     element: React.createElement(ClosingSlide, { remaining: events.length - selected.length, logoBase64 }),
   });
 
-  // Stories
+  const carouselOnly = process.env.CAROUSEL_ONLY === 'true';
   const storyPaths: string[] = [];
-  for (let i = 0; i < selected.length; i++) {
-    const event = selected[i];
-    const filePath = path.join(storiesDir, `0${i + 1}-story.png`);
-    console.log(`  → Rendering story ${i + 1}: ${event.title}...`);
-    await renderToImage({
-      format: 'story',
-      outputPath: filePath,
-      element: React.createElement(EventStory, { event, pinBase64 }),
-    });
-    storyPaths.push(filePath);
+
+  if (!carouselOnly) {
+    for (let i = 0; i < selected.length; i++) {
+      const event = selected[i];
+      const filePath = path.join(storiesDir, `0${i + 1}-story.png`);
+      console.log(`  → Rendering story ${i + 1}: ${event.title}...`);
+      await renderToImage({
+        format: 'story',
+        outputPath: filePath,
+        element: React.createElement(EventStory, { event, pinBase64 }),
+      });
+      storyPaths.push(filePath);
+    }
   }
 
   await closeBrowser();
@@ -125,10 +128,25 @@ async function main() {
   console.log(`  Uploading ${carouselFiles.length} carousel slides...`);
   const carouselUrls = await uploadImages(carouselFiles, `${prefix}/carousel`);
 
-  console.log(`\n  Uploading ${storyPaths.length} stories...`);
-  const storyUrls = await uploadImages(storyPaths, `${prefix}/stories`);
+  let storyUrls: string[] = [];
+  if (storyPaths.length > 0) {
+    console.log(`\n  Uploading ${storyPaths.length} stories...`);
+    storyUrls = await uploadImages(storyPaths, `${prefix}/stories`);
+  }
 
   console.log('\n✅ Uploads complete.\n');
+
+  if (process.env.DRY_RUN === 'true') {
+    console.log('🧪 DRY_RUN=true — skipping caption and publish.\n');
+    console.log('   Carousel URLs:');
+    carouselUrls.forEach((u) => console.log(`     ${u}`));
+    if (storyUrls.length > 0) {
+      console.log('   Story URLs:');
+      storyUrls.forEach((u) => console.log(`     ${u}`));
+    }
+    console.log('\n✅ Dry run complete. Set DRY_RUN=false to publish for real.');
+    return;
+  }
 
   // ── STEP 3: Publish ───────────────────────────────────────────────
   console.log('✍️  Step 3: Generating caption with GPT-4o-mini...\n');
@@ -137,26 +155,18 @@ async function main() {
   console.log(caption);
   console.log('');
 
-  if (process.env.DRY_RUN === 'true') {
-    console.log('🧪 DRY_RUN=true — skipping publish.\n');
-    console.log('   Carousel URLs:');
-    carouselUrls.forEach((u) => console.log(`     ${u}`));
-    console.log('   Story URLs:');
-    storyUrls.forEach((u) => console.log(`     ${u}`));
-    console.log('\n✅ Dry run complete. Set DRY_RUN=false in .env to publish for real.');
-    return;
-  }
-
   // ── STEP 4: Publish to Instagram ──────────────────────────────────
   console.log('📲 Step 4: Publishing to Instagram...\n');
 
   console.log('  Publishing carousel...');
   const carouselMediaId = await publishCarousel(carouselUrls, caption);
 
-  console.log('\n  Publishing stories...');
-  for (let i = 0; i < storyUrls.length; i++) {
-    console.log(`  → Story ${i + 1}/${storyUrls.length}...`);
-    await publishStory(storyUrls[i]);
+  if (storyUrls.length > 0) {
+    console.log('\n  Publishing stories...');
+    for (let i = 0; i < storyUrls.length; i++) {
+      console.log(`  → Story ${i + 1}/${storyUrls.length}...`);
+      await publishStory(storyUrls[i]);
+    }
   }
 
   console.log(`\n  ✓ Instagram done — Carousel: ${carouselMediaId}`);
