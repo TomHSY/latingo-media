@@ -13,6 +13,7 @@
     "publish:carousel-if-scheduled": "node scripts/run-tsx.mjs src/scripts/publish-carousel-if-scheduled.ts",
     "publish:stories-if-scheduled": "node scripts/run-tsx.mjs src/scripts/publish-stories-if-scheduled.ts",
     "test:api": "node scripts/run-tsx.mjs src/scripts/test-api.ts",
+    "test:stories-today": "node scripts/run-tsx.mjs src/scripts/test-stories-today.ts",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [],

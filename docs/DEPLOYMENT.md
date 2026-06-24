@@ -116,6 +116,10 @@ DRY_RUN=false npm run publish:real
 DRY_RUN=true npm run publish:stories-today
 DRY_RUN=false npm run publish:stories-today
 
+# API-only diagnostic — which events would be selected (no Playwright)
+npm run test:stories-today
+SEARCH="Soleil" npm run test:stories-today
+
 # Same entry points as GitHub Actions (with force override)
 FORCE_PUBLISH=carousel DRY_RUN=true npm run publish:carousel-if-scheduled
 FORCE_PUBLISH=stories DRY_RUN=true npm run publish:stories-if-scheduled
@@ -131,6 +135,7 @@ Open printed R2 URLs in a browser before going live.
 | `publish:stories-today` | One story per event today (Europe/Paris) |
 | `publish:carousel-if-scheduled` | Tue 14:00 Paris → carousel only |
 | `publish:stories-if-scheduled` | Daily 12:00 Paris → stories |
+| `test:stories-today` | API-only audit of today's story event selection (no render) |
 
 ## GitHub Actions schedule
 
@@ -176,6 +181,7 @@ If `api.latingo.fr` TLS fails on Ubuntu (unlikely), add a `NODE_EXTRA_CA_CERTS` 
 | Stories for wrong day | Stories always use **today Paris** — not weekend events |
 | `9007` / "media is not ready for publishing" | Instagram still processing container — fixed by polling `status_code` until `FINISHED` in `instagram.ts` |
 | Story fails with "Media download has failed" / code 9004 | R2 URL contained non-ASCII chars (e.g. accented city) — keys use event UUID only |
+| Missing story for an event shown in app | Run `npm run test:stories-today`; check `isoDateMismatch` flag — wrong `start_datetime` UTC vs Paris; ISO fallback may include it on next publish |
 
 ## Facebook
 

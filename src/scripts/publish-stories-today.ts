@@ -7,11 +7,10 @@ import path from 'path';
 import fs from 'fs';
 import 'dotenv/config';
 import { renderToImage, closeBrowser } from '../renderer/render';
-import { fetchEvents } from '../api/client';
 import { EventStory } from '../templates/ce-soir';
 import { uploadImage } from '../publisher/upload';
 import { publishStory } from '../publisher/instagram';
-import { getParisDayBounds } from '../utils/paris-time';
+import { fetchTodayStoryEvents, logStoryEventAudit } from '../utils/story-events';
 
 const OUTPUT_DIR = path.resolve(__dirname, '..', '..', 'output', 'stories-today');
 const pinBase64 = fs.readFileSync(path.resolve(__dirname, '..', '..', 'pin_large.png')).toString('base64');
@@ -23,26 +22,34 @@ function sleep(ms: number): Promise<void> {
 }
 
 async function main() {
-  const { from, to, label } = getParisDayBounds();
-  console.log(`📅 Stories for today (Europe/Paris): ${label}\n`);
-
-  const events = await fetchEvents({
-    date_from: from,
-    date_to: to,
-    sort_by: 'date_asc',
+  const { label, events, audit, excluded } = await fetchTodayStoryEvents({
+    includeIsoDateFallback: true,
   });
+
+  console.log(`📅 Stories for today (Europe/Paris): ${label}\n`);
 
   if (events.length === 0) {
     console.log('  No events today — nothing to publish.');
+    if (excluded.length > 0) {
+      console.log(`  (${excluded.length} event(s) in padded query but excluded by Paris-day filter)`);
+    }
     return;
   }
 
-  events.sort(
-    (a, b) => new Date(a.start_datetime).getTime() - new Date(b.start_datetime).getTime()
-  );
+  console.log(`  Selected ${events.length} event(s) for stories:\n`);
+  audit.forEach((a) => {
+    if (a.includeReason === 'iso_fallback') {
+      console.log(`  ⚠ ISO-date fallback: ${a.event.title}`);
+    }
+    logStoryEventAudit(a);
+  });
 
-  console.log(`  Found ${events.length} event(s):\n`);
-  events.forEach((e) => console.log(`    • ${e.title} (${e.city})`));
+  if (excluded.length > 0) {
+    console.log(`\n  Excluded (${excluded.length}):\n`);
+    excluded.forEach((a) => {
+      console.log(`    ✗ ${a.event.title} — Paris ${a.parisDate} ${a.parisTime} (${a.event.start_datetime})`);
+    });
+  }
   console.log('');
 
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
