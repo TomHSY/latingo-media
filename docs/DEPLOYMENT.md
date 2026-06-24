@@ -175,6 +175,7 @@ If `api.latingo.fr` TLS fails on Ubuntu (unlikely), add a `NODE_EXTRA_CA_CERTS` 
 | Duplicate posts | Re-ran workflow or both manual + scheduled same day |
 | Stories for wrong day | Stories always use **today Paris** — not weekend events |
 | `9007` / "media is not ready for publishing" | Instagram still processing container — fixed by polling `status_code` until `FINISHED` in `instagram.ts` |
+| Story fails with "Media download has failed" / code 9004 | R2 URL contained non-ASCII chars (e.g. accented city) — keys use event UUID only |
 
 ## Facebook
 

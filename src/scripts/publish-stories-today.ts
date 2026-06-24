@@ -18,10 +18,6 @@ const pinBase64 = fs.readFileSync(path.resolve(__dirname, '..', '..', 'pin_large
 
 const STORY_PUBLISH_DELAY_MS = 2000;
 
-function slugify(value: string): string {
-  return value.replace(/[^a-zA-Z0-9À-ÿ\-]/g, '_').slice(0, 40);
-}
-
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -56,7 +52,7 @@ async function main() {
 
   for (let i = 0; i < events.length; i++) {
     const event = events[i];
-    const safeName = `${event.id}-${slugify(event.city || 'event')}.png`;
+    const safeName = `${event.id}.png`;
     const filePath = path.join(OUTPUT_DIR, safeName);
 
     console.log(`  → Rendering story ${i + 1}/${events.length}: ${event.title}...`);
