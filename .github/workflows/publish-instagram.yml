@@ -3,7 +3,8 @@ name: Publish Instagram
 on:
   schedule:
     # UTC window around Paris 12:00 (stories) and Tue 14:00 (carousel); scripts guard on Europe/Paris
-    - cron: '0 11,12,13 * * *'
+    # 10 UTC = 12 Paris (CEST summer), 11 UTC = 12 Paris (CET winter), 12/13 UTC = Tue 14 Paris
+    - cron: '0 10,11,12,13 * * *'
   workflow_dispatch:
     inputs:
       job:

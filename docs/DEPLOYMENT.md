@@ -134,12 +134,21 @@ Open printed R2 URLs in a browser before going live.
 
 ## GitHub Actions schedule
 
-Workflow runs at **11:00, 12:00, 13:00 UTC** daily. Scripts check **Europe/Paris** before executing:
+Workflow runs at **10:00, 11:00, 12:00, 13:00 UTC** daily. Scripts check **Europe/Paris** before executing:
+
+| UTC cron | Paris (CEST summer) | Paris (CET winter) | Runs when guard passes |
+|----------|---------------------|--------------------|-------------------------|
+| 10:00 | 12:00 | 11:00 | Stories (summer) |
+| 11:00 | 13:00 | 12:00 | Stories (winter) |
+| 12:00 | 14:00 | 13:00 | Carousel (Tue summer) |
+| 13:00 | 15:00 | 14:00 | Carousel (Tue winter) |
 
 | Job | Paris time | Guard |
 |-----|------------|-------|
 | Carousel | Tuesday 14:00 | `shouldRunCarousel()` |
 | Stories | Daily 12:00 | `shouldRunStories()` |
+
+Extra cron fires exit 0 with a skip message when Paris hour does not match — this is expected.
 
 Manual trigger: **Actions → Publish Instagram → Run workflow** with job `carousel` or `stories`.
 
@@ -159,9 +168,9 @@ If `api.latingo.fr` TLS fails on Ubuntu (unlikely), add a `NODE_EXTRA_CA_CERTS` 
 
 | Symptom | Likely cause |
 |---------|----------------|
-| Workflow exits 0 but nothing posted | `DRY_RUN=true` in secrets |
+| Workflow exits 0 but nothing posted | `DRY_RUN=true` in secrets, or scheduled run skipped (see next row) |
+| Green scheduled run, no stories on Instagram | Logs show `Skipping stories — Paris time is …` — cron missed 12:00 Paris (CEST needs 10 UTC slot) |
 | Carousel step skipped on manual run | Wrong workflow input — pick `carousel`, not `stories` |
-| Stories skipped on schedule | Not 12:00 Paris at cron fire — use manual `stories` run |
 | OpenAI 403 in local dev | Corporate proxy — captions still work on GitHub Actions |
 | Duplicate posts | Re-ran workflow or both manual + scheduled same day |
 | Stories for wrong day | Stories always use **today Paris** — not weekend events |
