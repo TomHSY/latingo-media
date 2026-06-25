@@ -6,8 +6,8 @@ export function shouldRunCarousel(reference = new Date()): boolean {
   return weekday === 'Tue' && hour === 14;
 }
 
-/** Daily 12:00 Europe/Paris — event stories */
+/** Daily 10:00–18:00 Europe/Paris — event stories (window tolerates GitHub cron delays) */
 export function shouldRunStories(reference = new Date()): boolean {
   const { hour } = getParisDateTime(reference);
-  return hour === 12;
+  return hour >= 10 && hour <= 18;
 }

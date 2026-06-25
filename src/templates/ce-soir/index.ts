@@ -3,6 +3,7 @@ import { StoryLayout } from '../../components/layouts/StoryLayout';
 import { DanceTypePills } from '../../components/DanceTypePill';
 import { colors, typography } from '../../tokens/noche';
 import { formatTimeFrench } from '../../utils/dates';
+import { parseEventStartDatetime } from '../../utils/paris-time';
 import type { MediaEvent } from '../../types';
 
 export interface EventStoryProps {
@@ -11,7 +12,7 @@ export interface EventStoryProps {
 }
 
 export function EventStory({ event, pinBase64 }: EventStoryProps) {
-  const storyDate = new Date(event.start_datetime);
+  const storyDate = parseEventStartDatetime(event.start_datetime);
 
   return React.createElement(
     StoryLayout,

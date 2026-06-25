@@ -1,7 +1,7 @@
 import { fetchEvents } from '../api/client';
 import type { MediaEvent } from '../types';
 import { formatTimeFrench } from './dates';
-import { getParisDateLabel, getParisDayBounds } from './paris-time';
+import { getParisDateLabel, getParisDayBounds, parseEventStartDatetime } from './paris-time';
 
 const PADDED_MS = 12 * 3600000;
 
@@ -26,7 +26,7 @@ function buildAudit(
   strictIds: Set<string>,
   includeIsoDateFallback: boolean
 ): StoryEventAudit {
-  const start = new Date(event.start_datetime);
+  const start = parseEventStartDatetime(event.start_datetime);
   const parisDate = getParisDateLabel(start);
   const parisTime = formatTimeFrench(start);
   const inStrictQuery = strictIds.has(event.id);
@@ -147,7 +147,7 @@ export async function searchEventsByTitle(
   return events
     .filter((e) => pattern.test(e.title))
     .map((e) => {
-      const start = new Date(e.start_datetime);
+      const start = parseEventStartDatetime(e.start_datetime);
       return {
         event: e,
         parisDate: getParisDateLabel(start),

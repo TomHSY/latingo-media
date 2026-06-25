@@ -8,7 +8,7 @@ import fs from 'fs';
 import 'dotenv/config';
 import { renderToImage, closeBrowser } from '../renderer/render';
 import { EventStory } from '../templates/ce-soir';
-import { uploadImage } from '../publisher/upload';
+import { uploadImage, listR2Keys } from '../publisher/upload';
 import { publishStory } from '../publisher/instagram';
 import { fetchTodayStoryEvents, logStoryEventAudit } from '../utils/story-events';
 
@@ -27,6 +27,16 @@ async function main() {
   });
 
   console.log(`📅 Stories for today (Europe/Paris): ${label}\n`);
+
+  const r2Prefix = `posts/${label}/stories-daily`;
+  const force = process.env.FORCE_PUBLISH === 'stories';
+  const existingKeys = await listR2Keys(r2Prefix);
+  if (!force && existingKeys.length > 0) {
+    console.log(
+      `⏭ Stories already published for ${label} (${existingKeys.length} file(s) in R2 at ${r2Prefix}/). Skipping.`
+    );
+    return;
+  }
 
   if (events.length === 0) {
     console.log('  No events today — nothing to publish.');
@@ -54,7 +64,6 @@ async function main() {
 
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
-  const r2Prefix = `posts/${label}/stories-daily`;
   const storyUrls: string[] = [];
 
   for (let i = 0; i < events.length; i++) {

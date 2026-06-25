@@ -2,9 +2,9 @@ name: Publish Instagram
 
 on:
   schedule:
-    # UTC window around Paris 12:00 (stories) and Tue 14:00 (carousel); scripts guard on Europe/Paris
-    # 10 UTC = 12 Paris (CEST summer), 11 UTC = 12 Paris (CET winter), 12/13 UTC = Tue 14 Paris
-    - cron: '0 10,11,12,13 * * *'
+    # :15 past the hour avoids GitHub peak load at :00; scripts guard on Europe/Paris
+    # 09:15 UTC ≈ 11:15 Paris (CEST), 10:15 ≈ 12:15, 11/12 UTC = Tue 14 Paris carousel window
+    - cron: '15 9,10,11,12 * * *'
   workflow_dispatch:
     inputs:
       job:

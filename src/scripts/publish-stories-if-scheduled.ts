@@ -22,7 +22,7 @@ if (!force && !shouldRunStories()) {
   process.exit(0);
 }
 
-console.log(force ? '🚀 Force-running daily stories publish...\n' : '🚀 Scheduled stories publish (12:00 Paris)...\n');
+  console.log(force ? '🚀 Force-running daily stories publish...\n' : '🚀 Scheduled stories publish (10:00–18:00 Paris window)...\n');
 
 const result = spawnSync(process.execPath, [runTsx, publishStoriesToday], {
   stdio: 'inherit',

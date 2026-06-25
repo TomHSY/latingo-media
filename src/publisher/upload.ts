@@ -2,7 +2,7 @@
  * Upload images to Cloudflare R2 and return public URLs.
  * Converts PNG to JPEG before uploading (Meta requires JPEG).
  */
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import sharp from 'sharp';
 import fs from 'fs';
 import path from 'path';
@@ -61,4 +61,29 @@ export async function uploadImages(filePaths: string[], prefix: string): Promise
     console.log(`  ✓ Uploaded ${filename} → ${url}`);
   }
   return urls;
+}
+
+/** List object keys under an R2 prefix (for publish idempotency). */
+export async function listR2Keys(prefix: string): Promise<string[]> {
+  const normalized = prefix.replace(/\/$/, '');
+  const keys: string[] = [];
+  let continuationToken: string | undefined;
+
+  do {
+    const response = await s3.send(
+      new ListObjectsV2Command({
+        Bucket: BUCKET,
+        Prefix: `${normalized}/`,
+        ContinuationToken: continuationToken,
+      })
+    );
+
+    for (const item of response.Contents ?? []) {
+      if (item.Key) keys.push(item.Key);
+    }
+
+    continuationToken = response.IsTruncated ? response.NextContinuationToken : undefined;
+  } while (continuationToken);
+
+  return keys;
 }

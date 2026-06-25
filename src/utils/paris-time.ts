@@ -100,6 +100,25 @@ function findUtcForParisLocal(y: number, m: number, d: number, h: number, mi: nu
   throw new Error(`Could not resolve Paris local time: ${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')} ${String(h).padStart(2, '0')}:${String(mi).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
 }
 
+/**
+ * Parse a naive ISO datetime string (no Z or offset) as Paris local time.
+ * e.g. "2026-06-24T22:00:00" → 22:00 Paris regardless of system timezone.
+ */
+export function parseAsParisLocal(isoString: string): Date {
+  const match = isoString.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+  if (!match) throw new Error(`Invalid datetime format: ${isoString}`);
+  const [, y, m, d, h, mi, s] = match.map(Number);
+  return findUtcForParisLocal(y, m, d, h, mi, s);
+}
+
+/** Parse API start_datetime — naive strings are Paris local; Z/offset strings are absolute UTC. */
+export function parseEventStartDatetime(isoString: string): Date {
+  if (/[zZ]|[+-]\d{2}:\d{2}$/.test(isoString.trim())) {
+    return new Date(isoString);
+  }
+  return parseAsParisLocal(isoString);
+}
+
 /** UTC ISO bounds for a calendar day in Europe/Paris */
 export function getParisDayBounds(reference = new Date()): { from: string; to: string; label: string } {
   const label = getParisDateLabel(reference);
