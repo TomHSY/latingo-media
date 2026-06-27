@@ -1,18 +1,16 @@
 import { useState, FormEvent } from 'react'
 import { useInView } from '../hooks/useInView'
+import { FORMSPREE_IOS_ID } from '../constants'
 
-// Formspree form endpoint
-const FORMSPREE_ID = 'xbdellkv'
-
-export default function EarlyAccessForm() {
+export default function IOSWaitlist() {
   const { ref, inView } = useInView(0.1)
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [prenom, setPrenom] = useState('')
   const [email, setEmail] = useState('')
-  const [device, setDevice] = useState<'Android' | 'iPhone' | ''>('')
   const [ville, setVille] = useState('')
+  const [commentaires, setCommentaires] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   const validate = () => {
@@ -20,7 +18,6 @@ export default function EarlyAccessForm() {
     if (!prenom.trim()) newErrors.prenom = 'Ton prénom est requis.'
     if (!email.trim()) newErrors.email = 'Ton email est requis.'
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) newErrors.email = 'Email invalide.'
-    if (!device) newErrors.device = 'Choisis ton appareil.'
     return newErrors
   }
 
@@ -34,14 +31,16 @@ export default function EarlyAccessForm() {
     setSubmitError('')
 
     try {
-      const response = await fetch(`https://formspree.io/f/${FORMSPREE_ID}`, {
+      const response = await fetch(`https://formspree.io/f/${FORMSPREE_IOS_ID}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({
           prenom,
           email,
-          appareil: device,
+          appareil: 'iPhone',
           ville: ville || 'Non renseignée',
+          commentaires: commentaires || '—',
+          source: 'landing-ios-waitlist',
         }),
       })
 
@@ -58,7 +57,7 @@ export default function EarlyAccessForm() {
   }
 
   return (
-    <section id="inscription" className="bg-background pt-6 pb-14 md:pt-8 md:pb-20">
+    <section id="ios" className="bg-surface pt-6 pb-14 md:pt-8 md:pb-20">
       <div
         ref={ref}
         className={`max-w-[480px] mx-auto px-4 transition-all duration-700 ${
@@ -69,21 +68,19 @@ export default function EarlyAccessForm() {
           {submitted ? (
             <div className="text-center py-8">
               <div className="text-5xl mb-4">✓</div>
-              <h3 className="text-xl font-bold mb-2">Demande envoyée !</h3>
+              <h3 className="text-xl font-bold mb-2">C'est noté !</h3>
               <p className="text-secondary-text">
-                On te recontacte très vite avec ton lien de téléchargement.
+                On te prévient dès que LatinGo sort sur iPhone.
               </p>
             </div>
           ) : (
             <>
               <h2 className="text-2xl md:text-3xl font-bold mb-2 text-center">
-                Rejoins l'accès anticipé.
+                iOS arrive bientôt
               </h2>
-              <p className="text-secondary-text text-center mb-3">
-                L'app est prête. On ouvre l'accès par vagues aux danseurs de la région.
-              </p>
-              <p className="text-secondary-text text-center text-sm mb-8">
-                🎯 Places limitées — les premiers inscrits accèdent en priorité et participent à façonner l'app.
+              <p className="text-secondary-text text-center mb-8">
+                L'app est disponible sur Android. Inscris-toi pour être informé en
+                premier du lancement iPhone.
               </p>
 
               <form onSubmit={handleSubmit} className="space-y-5">
@@ -93,11 +90,6 @@ export default function EarlyAccessForm() {
                     type="text"
                     value={prenom}
                     onChange={(e) => setPrenom(e.target.value)}
-                    onFocus={() => {
-                      const el = document.querySelector('[data-event="form_focus"]')
-                      if (!el) document.querySelector('form')?.setAttribute('data-event', 'form_focus')
-                    }}
-                    data-event="form_focus"
                     placeholder="Ton prénom"
                     className="w-full bg-background border border-[#2a2a35] rounded-lg px-4 py-3 text-primary-text placeholder:text-secondary-text focus:outline-none focus:border-coral focus:ring-1 focus:ring-coral transition-colors"
                   />
@@ -110,51 +102,10 @@ export default function EarlyAccessForm() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="ton.prenom@gmail.com"
+                    placeholder="ton.prenom@icloud.com"
                     className="w-full bg-background border border-[#2a2a35] rounded-lg px-4 py-3 text-primary-text placeholder:text-secondary-text focus:outline-none focus:border-coral focus:ring-1 focus:ring-coral transition-colors"
                   />
                   {errors.email && <p className="text-coral text-sm mt-1">{errors.email}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">Ton téléphone</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      data-event="device_android"
-                      onClick={() => setDevice('Android')}
-                      className={`py-3 rounded-lg font-medium transition-colors ${
-                        device === 'Android'
-                          ? 'bg-coral text-white font-bold'
-                          : 'bg-[#2a2a35] text-secondary-text hover:text-primary-text'
-                      }`}
-                    >
-                      Android
-                    </button>
-                    <button
-                      type="button"
-                      data-event="device_iphone"
-                      onClick={() => setDevice('iPhone')}
-                      className={`py-3 rounded-lg font-medium transition-colors ${
-                        device === 'iPhone'
-                          ? 'bg-coral text-white font-bold'
-                          : 'bg-[#2a2a35] text-secondary-text hover:text-primary-text'
-                      }`}
-                    >
-                      iPhone
-                    </button>
-                  </div>
-                  {errors.device && <p className="text-coral text-sm mt-1">{errors.device}</p>}
-                  {device === 'Android' && (
-                    <p className="text-secondary-text text-sm mt-2">
-                      💡 Utilise ton adresse <span className="text-primary-text font-medium">Gmail</span> pour recevoir l'accès directement sur le Play Store.
-                    </p>
-                  )}
-                  {device === 'iPhone' && (
-                    <p className="text-secondary-text text-sm mt-2">
-                      📱 L'accès anticipé est disponible sur Android. La version iPhone arrive très bientôt — inscris-toi pour être dans les <span className="text-primary-text font-medium">premiers informés</span> dès le lancement iOS.
-                    </p>
-                  )}
                 </div>
 
                 <div>
@@ -168,13 +119,26 @@ export default function EarlyAccessForm() {
                   />
                 </div>
 
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">
+                    Commentaires <span className="text-secondary-text font-normal">(optionnel)</span>
+                  </label>
+                  <textarea
+                    value={commentaires}
+                    onChange={(e) => setCommentaires(e.target.value)}
+                    placeholder="Une question, une suggestion..."
+                    rows={3}
+                    className="w-full bg-background border border-[#2a2a35] rounded-lg px-4 py-3 text-primary-text placeholder:text-secondary-text focus:outline-none focus:border-coral focus:ring-1 focus:ring-coral transition-colors resize-none"
+                  />
+                </div>
+
                 <button
                   type="submit"
-                  data-event="form_submit"
+                  data-event="ios_waitlist_submit"
                   disabled={submitting}
                   className="w-full bg-coral text-white font-bold py-4 rounded-lg hover:bg-coral/90 hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  {submitting ? 'Envoi en cours...' : 'Je veux mon accès →'}
+                  {submitting ? 'Envoi en cours...' : 'Me prévenir pour iOS →'}
                 </button>
 
                 {submitError && (
@@ -182,7 +146,7 @@ export default function EarlyAccessForm() {
                 )}
 
                 <p className="text-secondary-text text-sm text-center">
-                  Pas de spam. Juste un lien de téléchargement quand c'est ton tour.
+                  Pas de spam. Juste une notification au lancement iOS.
                 </p>
               </form>
             </>

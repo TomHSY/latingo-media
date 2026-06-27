@@ -1,15 +1,19 @@
 import { useInView } from '../hooks/useInView'
+import { events } from '../data'
 
 const cities = [
-  'Bayonne', 'Biarritz', 'Anglet', 'Pau', 'Dax',
-  'Hossegor', 'Saint-Jean-de-Luz', 'Mont-de-Marsan',
+  'Bayonne', 'Anglet', 'Biarritz', 'Saint-Jean-de-Luz',
+  'Dax', 'Capbreton', 'Hossegor', 'Mont-de-Marsan',
+  'Pau', 'Tarbes',
+  'San Sebastian', 'Irun',
 ]
 
 export default function LocalProof() {
   const { ref, inView } = useInView(0.1)
+  const { totalEvents, totalVenues } = events.stats
 
   return (
-    <section className="bg-background py-14 md:py-20">
+    <section className="bg-surface py-14 md:py-20">
       <div
         ref={ref}
         className={`max-w-3xl mx-auto px-4 text-center transition-all duration-700 ${
@@ -24,7 +28,7 @@ export default function LocalProof() {
           {cities.map((city) => (
             <span
               key={city}
-              className="bg-surface text-secondary-text px-4 py-2 rounded-full text-sm"
+              className="bg-background text-secondary-text px-4 py-2 rounded-full text-sm"
             >
               {city}
             </span>
@@ -35,7 +39,10 @@ export default function LocalProof() {
           Nouvelles villes ajoutées chaque semaine.
         </p>
         <p className="text-coral font-bold text-lg">
-          46 événements référencés ce mois-ci
+          {totalEvents} événements · {totalVenues} lieux
+        </p>
+        <p className="text-secondary-text text-xs mt-2">
+          Mis à jour quotidiennement
         </p>
       </div>
     </section>

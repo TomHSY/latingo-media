@@ -1,12 +1,12 @@
 # Landing Page
 
-Early Access marketing site for LatinGo. Converts local SBK dancers into waitlist signups. Lives in `landing/` — separate from the media engine (`src/`).
+Public marketing site for LatinGo. Converts local SBK dancers into app downloads and captures iOS waitlist signups. Lives in `landing/` — separate from the media engine (`src/`).
 
 ## Purpose
 
-Single-page funnel: explain the problem, show features, build trust, collect Early Access signups. Deployed at **www.latingo.fr**.
+Single-page funnel: explain the problem, show features, display live event previews, build trust, drive Play Store downloads, collect iOS waitlist signups, recruit organizers. Deployed at **www.latingo.fr**.
 
-Brand voice aligns with [strategy/CONTEXT.md](strategy/CONTEXT.md). Instagram carousel CTAs may link here or to app stores.
+Brand voice aligns with [strategy/CONTEXT.md](strategy/CONTEXT.md). Instagram carousel CTAs link to app stores or this site.
 
 ## Stack
 
@@ -19,7 +19,22 @@ Brand voice aligns with [strategy/CONTEXT.md](strategy/CONTEXT.md). Instagram ca
 
 `landing/src/App.tsx` composes:
 
-Navbar → Hero → Problem → Features → LocalProof → HowItWorks → Banner → EarlyAccessForm → Trust → FAQ → Footer
+Navbar → Hero → Problem → Features → Screenshots → EventsPreview → LocalProof → Download → IOSWaitlist → Organizers → FAQ → Footer
+
+## Dynamic event data
+
+Event stats and preview cards are fetched from `api.latingo.fr` at build time:
+
+- Script: `landing/scripts/fetch-events.ts`
+- Output: `landing/src/data/events.json` (committed; refreshed on deploy)
+- Fallback: `landing/src/data/events.fallback.json` if fetch fails locally
+
+**Refresh schedule:**
+
+- Every push to `main` (via `deploy-landing.yml`)
+- Daily at 8am Paris (via `refresh-landing.yml`)
+
+Requires GitHub secrets: `ADMIN_EMAIL`, `ADMIN_PASSWORD` (same service account as media engine).
 
 ## Commands
 
@@ -28,23 +43,34 @@ Run from `landing/`:
 | Script | Purpose |
 |--------|---------|
 | `npm run dev` | Local dev server |
-| `npm run build` | Production build → `landing/dist/` |
+| `npm run fetch-events` | Refresh `events.json` from API |
+| `npm run build` | Fetch events + production build → `landing/dist/` |
+| `npm run build:site` | Build only (skip fetch) |
 | `npm run preview` | Preview production build |
 
 Root `package.json` scripts do **not** cover the landing site.
 
 ## Deploy
 
-GitHub Actions workflow: `.github/workflows/deploy-landing.yml`
+GitHub Actions workflows:
 
-- Trigger: push to `main`
-- Builds `landing/` with Node 20
-- Deploys `landing/dist/` to GitHub Pages
-- Custom domain: `landing/public/CNAME` → `www.latingo.fr`
+- `.github/workflows/deploy-landing.yml` — push to `main`
+- `.github/workflows/refresh-landing.yml` — daily cron + manual trigger
 
-## Early Access form
+Both fetch events, build `landing/`, deploy `landing/dist/` to GitHub Pages. Custom domain: `landing/public/CNAME` → `www.latingo.fr`.
 
-`EarlyAccessForm.tsx` submits to **Formspree** (`formspree.io`) — no backend in this repo. Fields: prénom, email, device (Android/iPhone), ville (optional).
+## iOS waitlist form
+
+`IOSWaitlist.tsx` submits to **Formspree** (`formspree.io`) — no backend in this repo. Fields: prénom, email, ville, commentaires (optional).
+
+## External links
+
+| Link | URL |
+|------|-----|
+| Google Play | `https://play.google.com/store/apps/details?id=fr.latingo.app` |
+| Instagram | `https://www.instagram.com/latingo.fr/` |
+| Facebook | `https://www.facebook.com/profile.php?id=61590203503679` |
+| Contact | `contact@latingo.fr` |
 
 ## Design tokens
 
@@ -63,7 +89,7 @@ Similar palette to media engine Noche theme but independently configured.
 
 ## Assets
 
-Images in `landing/public/images/`. Source photos originally from repo `pictures/` folder.
+Images in `landing/public/images/`. App screenshots sourced from repo `pictures/Screenshot_*.jpg`.
 
 ## Relationship to media engine
 
@@ -71,5 +97,5 @@ Images in `landing/public/images/`. Source photos originally from repo `pictures
 |--|----------------------|---------------------|
 | Build | Root `package.json` | `landing/package.json` |
 | Output | PNG files in `output/` | Static HTML in `landing/dist/` |
-| API | Reads api.latingo.fr | Formspree only |
-| Deploy | Manual / future n8n | GitHub Pages auto |
+| API | Reads api.latingo.fr | Formspree + build-time events fetch |
+| Deploy | Manual / GitHub Actions | GitHub Pages auto |

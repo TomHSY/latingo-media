@@ -9,11 +9,20 @@ export default function Navbar() {
         scrolled ? 'bg-surface/95 backdrop-blur-md' : 'bg-transparent'
       }`}
     >
-      <div className="max-w-2xl mx-auto px-5 py-4 flex items-center">
+      <div className="max-w-5xl mx-auto px-5 py-3 flex items-center justify-between">
         <a href="#" className="flex items-center gap-3">
-          <img src="/images/icon.png" alt="LatinGo" className="w-16 h-16 rounded-xl" />
-          <span className="font-bold text-3xl text-primary-text">LatinGo</span>
+          <img src="/images/icon.png" alt="LatinGo" className="w-12 h-12 md:w-14 md:h-14 rounded-xl" />
+          <span className="font-bold text-2xl md:text-3xl text-primary-text">LatinGo</span>
         </a>
+
+        <div className="hidden sm:flex items-center gap-6 text-sm">
+          <a href="#organisateurs" className="text-secondary-text hover:text-primary-text transition-colors">
+            Organisateurs
+          </a>
+          <a href="#faq" className="text-secondary-text hover:text-primary-text transition-colors">
+            FAQ
+          </a>
+        </div>
       </div>
     </nav>
   )

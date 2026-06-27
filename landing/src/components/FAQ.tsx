@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useInView } from '../hooks/useInView'
+import { CONTACT_EMAIL } from '../constants'
 
 const faqs = [
   {
@@ -7,24 +8,28 @@ const faqs = [
     answer: 'Oui, totalement gratuit pour les danseurs. Aujourd\'hui et pour toujours.',
   },
   {
-    question: 'C\'est quoi l\'accès anticipé ?',
-    answer: 'L\'app est fonctionnelle et déjà utilisée par des danseurs de la région. On ouvre l\'accès progressivement pour garantir la meilleure expérience et intégrer vos retours. Les premiers inscrits reçoivent leur accès en priorité.',
-  },
-  {
-    question: 'Quand sort la version officielle ?',
-    answer: 'L\'app est déjà disponible en accès anticipé sur Android. Le lancement officiel (ouvert à tous, iOS inclus) est prévu prochainement. Inscris-toi pour ne pas rater l\'ouverture.',
-  },
-  {
     question: 'Android et iPhone ?',
-    answer: 'L\'accès anticipé est actuellement sur Android (via le Play Store). La version iPhone est en cours de développement et arrive très bientôt. En t\'inscrivant maintenant, tu seras prioritaire dès la sortie iOS.',
+    answer: 'LatinGo est disponible sur Android via le Google Play Store. La version iPhone arrive très bientôt — inscris-toi à la liste d\'attente iOS pour être informé en premier.',
   },
   {
     question: 'Comment vous trouvez les événements ?',
-    answer: 'On regroupe les sources locales (réseaux sociaux, organisateurs, bouche-à-oreille) et on vérifie chaque événement manuellement.',
+    answer: 'On regroupe les sources locales (réseaux sociaux, organisateurs, bouche-à-oreille) et on vérifie chaque événement. Les organisateurs peuvent aussi ajouter leurs soirées directement dans l\'app.',
   },
   {
-    question: 'Je suis organisateur, comment référencer mes événements ?',
-    answer: 'Écris-nous à contact@latingo.fr — on les ajoute gratuitement. C\'est rapide et ça donne de la visibilité à tes soirées auprès de toute la communauté.',
+    question: 'Dans quelles villes l\'app est-elle disponible ?',
+    answer: 'Actuellement dans le Sud-Ouest : Pays Basque, Landes, Béarn, Pau et alentours. De nouvelles villes sont ajoutées régulièrement.',
+  },
+  {
+    question: 'Comment ajouter mon événement en tant qu\'organisateur ?',
+    answer: `Télécharge l'app sur Android, crée ton compte et ajoute tes événements directement. C'est gratuit. Pour toute question : ${CONTACT_EMAIL}.`,
+  },
+  {
+    question: 'C\'est payant pour les organisateurs ?',
+    answer: 'Non. Référencer tes soirées sur LatinGo est entièrement gratuit.',
+  },
+  {
+    question: 'Comment vous contacter ?',
+    answer: `Écris-nous à ${CONTACT_EMAIL} — on répond rapidement.`,
   },
 ]
 
@@ -33,7 +38,7 @@ export default function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(null)
 
   return (
-    <section className="bg-background py-14 md:py-20">
+    <section id="faq" className="bg-background py-14 md:py-20">
       <div
         ref={ref}
         className={`max-w-2xl mx-auto px-4 transition-all duration-700 ${

@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "fetch-events": "node ../scripts/run-tsx.mjs landing/scripts/fetch-events.ts",
+    "build": "npm run fetch-events && tsc && vite build",
+    "build:site": "tsc && vite build",
     "preview": "vite preview"
   },
   "dependencies": {

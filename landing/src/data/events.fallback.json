@@ -1,0 +1,41 @@
+{
+  "stats": {
+    "totalEvents": 192,
+    "totalVenues": 68
+  },
+  "upcoming": [
+    {
+      "id": "fallback-1",
+      "title": "Soirée Latino à La Guinguette",
+      "startDatetime": "2026-06-28T19:30:00",
+      "city": "Ustaritz",
+      "styles": ["Salsa", "Bachata"],
+      "imageUrl": null
+    },
+    {
+      "id": "fallback-2",
+      "title": "Salsa bachata et latino - Kulunka",
+      "startDatetime": "2026-06-29T18:30:00",
+      "city": "Bayonne",
+      "styles": ["Salsa", "Bachata"],
+      "imageUrl": null
+    },
+    {
+      "id": "fallback-3",
+      "title": "LATINO DAX FESTIVAL 2026",
+      "startDatetime": "2026-07-03T18:30:00",
+      "city": "Saint-Lon-les-Mines",
+      "styles": ["Salsa", "Bachata", "Kizomba"],
+      "imageUrl": null
+    },
+    {
+      "id": "fallback-4",
+      "title": "Danse libre SBK au bord du lac",
+      "startDatetime": "2026-06-28T11:00:00",
+      "city": "Saint-Paul-lès-Dax",
+      "styles": ["Salsa", "Bachata", "Kizomba"],
+      "imageUrl": null
+    }
+  ],
+  "fetchedAt": "2026-06-27T00:00:00.000Z"
+}

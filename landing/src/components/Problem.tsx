@@ -19,18 +19,10 @@ export default function Problem() {
   ]
 
   return (
-    <section className="relative bg-surface py-14 md:py-20 overflow-hidden">
-      <img
-        src="/images/indoor-party.png"
-        alt=""
-        className="absolute inset-0 w-full h-full object-cover opacity-40"
-        loading="lazy"
-      />
-      <div className="absolute inset-0 bg-surface/50" />
-
+    <section className="bg-surface py-14 md:py-20">
       <div
         ref={ref}
-        className={`relative z-10 max-w-[640px] mx-auto px-4 transition-all duration-700 ${
+        className={`max-w-[640px] mx-auto px-4 transition-all duration-700 ${
           inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
         }`}
       >

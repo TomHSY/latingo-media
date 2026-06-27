@@ -1,8 +1,9 @@
-name: Deploy to GitHub Pages
+name: Refresh Landing Data
 
 on:
-  push:
-    branches: [main]
+  schedule:
+    - cron: '0 6 * * *' # 8am Paris (UTC+2)
+  workflow_dispatch:
 
 permissions:
   contents: read

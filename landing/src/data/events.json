@@ -1,0 +1,54 @@
+{
+  "stats": {
+    "totalEvents": 81,
+    "totalVenues": 51
+  },
+  "upcoming": [
+    {
+      "id": "d63aac36-c547-4a6b-82d1-aa0166d6f745",
+      "title": "Ohana",
+      "startDatetime": "2026-06-27T18:00:00",
+      "city": "Ergoien",
+      "styles": [
+        "Kizomba"
+      ],
+      "imageUrl": "https://pub-0a74468ba5af4a029f562126cdb5944f.r2.dev/events/aa15a2cd-16da-4571-aa3e-e2d044dc5b11.jpg"
+    },
+    {
+      "id": "059d10cb-8d1a-4f53-827b-8194c96dfb9c",
+      "title": "Tardeo SBK Slow",
+      "startDatetime": "2026-06-27T18:00:00",
+      "city": "Vitoria - Gasteiz",
+      "styles": [
+        "Salsa",
+        "Bachata",
+        "Kizomba"
+      ],
+      "imageUrl": "https://pub-0a74468ba5af4a029f562126cdb5944f.r2.dev/events/e535080b-6733-4dcd-a748-7719a1a1bd8b.jpg"
+    },
+    {
+      "id": "a0158d8b-46a5-4a19-8421-6b95ede09822",
+      "title": "LATIN'SUNSET-ep3 : face à l'océan et au sunset à Capbreton",
+      "startDatetime": "2026-06-27T19:30:00",
+      "city": "Capbreton",
+      "styles": [
+        "Salsa",
+        "Bachata"
+      ],
+      "imageUrl": "https://pub-0a74468ba5af4a029f562126cdb5944f.r2.dev/events/71b74d81-7a01-4b28-8bc2-ec35095c157e.jpg"
+    },
+    {
+      "id": "6e76a51b-39f4-450d-a4f2-61a5eb996d85",
+      "title": "Semba Vibes Spring Edition",
+      "startDatetime": "2026-06-27T20:00:00",
+      "city": "Tarbes",
+      "styles": [
+        "Kizomba",
+        "Semba",
+        "Zouk"
+      ],
+      "imageUrl": "https://pub-0a74468ba5af4a029f562126cdb5944f.r2.dev/events/f661b916-92f6-40be-8ea2-936d73a29bdf.jpg"
+    }
+  ],
+  "fetchedAt": "2026-06-27T10:23:00.737Z"
+}
