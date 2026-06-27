@@ -40,13 +40,13 @@ export default function EventsPreview() {
           Un aperçu en direct — mis à jour chaque jour.
         </p>
 
-        <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory md:grid md:grid-cols-2 lg:grid-cols-4 md:overflow-visible">
+        <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 snap-x snap-mandatory md:mx-0 md:grid md:grid-cols-2 md:gap-4 md:overflow-visible lg:grid-cols-4">
           {events.upcoming.map((event) => (
             <article
               key={event.id}
-              className="min-w-[200px] md:min-w-0 snap-start bg-surface/90 rounded-xl overflow-hidden flex-shrink-0"
+              className="w-[160px] shrink-0 snap-start bg-surface/90 rounded-xl overflow-hidden md:w-auto"
             >
-              <div className="aspect-[16/10] bg-[#2a2a35] relative">
+              <div className="aspect-[2/1] md:aspect-[16/10] bg-[#2a2a35] relative">
                 {event.imageUrl ? (
                   <img
                     src={event.imageUrl}
@@ -60,7 +60,7 @@ export default function EventsPreview() {
                   </div>
                 )}
               </div>
-              <div className="p-4">
+              <div className="p-3 md:p-4">
                 <p className="text-coral text-xs font-medium mb-1">
                   {formatEventWhen(event.startDatetime)}
                 </p>
