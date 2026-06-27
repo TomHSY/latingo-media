@@ -44,9 +44,9 @@ export default function EventsPreview() {
           {events.upcoming.map((event) => (
             <article
               key={event.id}
-              className="min-w-[240px] md:min-w-0 snap-start bg-surface/90 rounded-xl overflow-hidden flex-shrink-0"
+              className="min-w-[200px] md:min-w-0 snap-start bg-surface/90 rounded-xl overflow-hidden flex-shrink-0"
             >
-              <div className="aspect-[4/3] bg-[#2a2a35] relative">
+              <div className="aspect-[16/10] bg-[#2a2a35] relative">
                 {event.imageUrl ? (
                   <img
                     src={event.imageUrl}
