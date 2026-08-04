@@ -11,11 +11,11 @@ import { fetchWeekendEvents, fetchEvents } from '../api/client';
 import { CoverSlide, EventSlide, ClosingSlide } from '../templates/weekly-digest';
 import { EventStory } from '../templates/ce-soir';
 import type { MediaEvent } from '../types';
-import { uploadImages } from '../publisher/upload';
+import { uploadImages, listR2Keys } from '../publisher/upload';
 import { publishCarousel, publishStory } from '../publisher/instagram';
 import { publishFacebookAlbum } from '../publisher/facebook';
 import { generateCarouselCaption } from '../publisher/caption';
-import { getParisCalendarWeekCover } from '../utils/paris-time';
+import { getParisCalendarWeekCover, getParisDateLabel } from '../utils/paris-time';
 
 const OUTPUT_DIR = path.resolve(__dirname, '..', '..', 'output', 'real');
 const logoBase64 = fs.readFileSync(path.resolve(__dirname, '..', 'assets', 'icon-text.png')).toString('base64');
@@ -23,6 +23,17 @@ const pinBase64 = fs.readFileSync(path.resolve(__dirname, '..', '..', 'pin_large
 
 async function main() {
   console.log('🔗 Fetching real events from api.latingo.fr...\n');
+
+  const label = getParisDateLabel();
+  const r2Prefix = `posts/${label}/carousel`;
+  const force = process.env.FORCE_PUBLISH === 'carousel';
+  const existingKeys = await listR2Keys(r2Prefix);
+  if (!force && existingKeys.length > 0) {
+    console.log(
+      `⏭ Carousel already published for ${label} (${existingKeys.length} file(s) in R2 at ${r2Prefix}/). Skipping.`
+    );
+    return;
+  }
 
   let events = await fetchWeekendEvents();
 
@@ -116,8 +127,7 @@ async function main() {
   console.log('\n✅ Renders complete.\n');
 
   // ── STEP 2: Upload ────────────────────────────────────────────────
-  const timestamp = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-  const prefix = `posts/${timestamp}`;
+  const prefix = `posts/${label}`;
 
   console.log('☁️  Step 2: Uploading to R2...\n');
 
