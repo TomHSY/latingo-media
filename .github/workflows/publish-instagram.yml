@@ -14,6 +14,10 @@ on:
         options:
           - carousel
           - stories
+      event_id:
+        description: Optional event UUID — republish one story only (with job=stories)
+        required: false
+        type: string
 
 concurrency:
   group: publish-instagram
@@ -68,4 +72,5 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           DRY_RUN: ${{ secrets.DRY_RUN }}
           FORCE_PUBLISH: ${{ github.event.inputs.job == 'stories' && 'stories' || '' }}
+          STORY_EVENT_ID: ${{ github.event.inputs.event_id }}
         run: npm run publish:stories-if-scheduled

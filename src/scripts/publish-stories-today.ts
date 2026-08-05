@@ -22,6 +22,8 @@ function sleep(ms: number): Promise<void> {
 }
 
 async function main() {
+  const singleEventId = process.env.STORY_EVENT_ID?.trim();
+
   const { label, events, audit, excluded } = await fetchTodayStoryEvents({
     includeIsoDateFallback: true,
   });
@@ -29,7 +31,7 @@ async function main() {
   console.log(`📅 Stories for today (Europe/Paris): ${label}\n`);
 
   const r2Prefix = `posts/${label}/stories-daily`;
-  const force = process.env.FORCE_PUBLISH === 'stories';
+  const force = process.env.FORCE_PUBLISH === 'stories' || !!singleEventId;
   const existingKeys = await listR2Keys(r2Prefix);
   if (!force && existingKeys.length > 0) {
     console.log(
@@ -46,8 +48,20 @@ async function main() {
     return;
   }
 
-  console.log(`  Selected ${events.length} event(s) for stories:\n`);
-  audit.forEach((a) => {
+  let eventsToPublish = events;
+  if (singleEventId) {
+    eventsToPublish = events.filter((e) => e.id === singleEventId);
+    if (eventsToPublish.length === 0) {
+      console.log(`❌ Event ${singleEventId} not in today's story list.`);
+      process.exit(1);
+    }
+    console.log(`  Republishing single story: ${eventsToPublish[0].title}\n`);
+  }
+
+  console.log(`  Selected ${eventsToPublish.length} event(s) for stories:\n`);
+  audit
+    .filter((a) => eventsToPublish.some((e) => e.id === a.event.id))
+    .forEach((a) => {
     if (a.includeReason === 'iso_fallback') {
       console.log(`  ⚠ ISO-date fallback: ${a.event.title}`);
     }
@@ -66,12 +80,12 @@ async function main() {
 
   const storyUrls: string[] = [];
 
-  for (let i = 0; i < events.length; i++) {
-    const event = events[i];
+  for (let i = 0; i < eventsToPublish.length; i++) {
+    const event = eventsToPublish[i];
     const safeName = `${event.id}.png`;
     const filePath = path.join(OUTPUT_DIR, safeName);
 
-    console.log(`  → Rendering story ${i + 1}/${events.length}: ${event.title}...`);
+    console.log(`  → Rendering story ${i + 1}/${eventsToPublish.length}: ${event.title}...`);
     await renderToImage({
       format: 'story',
       outputPath: filePath,
