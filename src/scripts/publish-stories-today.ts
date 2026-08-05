@@ -82,7 +82,8 @@ async function main() {
 
   for (let i = 0; i < eventsToPublish.length; i++) {
     const event = eventsToPublish[i];
-    const safeName = `${event.id}.png`;
+    const fileBase = singleEventId ? `${event.id}-v${Date.now()}` : event.id;
+    const safeName = `${fileBase}.png`;
     const filePath = path.join(OUTPUT_DIR, safeName);
 
     console.log(`  → Rendering story ${i + 1}/${eventsToPublish.length}: ${event.title}...`);

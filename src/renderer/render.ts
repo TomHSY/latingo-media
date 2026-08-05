@@ -64,6 +64,14 @@ export async function renderToImage(options: RenderOptions): Promise<string> {
   // 2. Open page in headless browser
   const b = await getBrowser();
   const page: Page = await b.newPage();
+  await page.route('**/*', (route) => {
+    const headers = {
+      ...route.request().headers(),
+      'Cache-Control': 'no-cache',
+      Pragma: 'no-cache',
+    };
+    void route.continue({ headers });
+  });
 
   await page.setViewportSize({ width, height });
 

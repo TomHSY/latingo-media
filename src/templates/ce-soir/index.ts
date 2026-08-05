@@ -4,6 +4,7 @@ import { DanceTypePills } from '../../components/DanceTypePill';
 import { colors, typography } from '../../tokens/noche';
 import { formatTimeFrench } from '../../utils/dates';
 import { parseEventStartDatetime } from '../../utils/paris-time';
+import { cacheBustUrl } from '../../utils/urls';
 import type { MediaEvent } from '../../types';
 
 export interface EventStoryProps {
@@ -13,6 +14,7 @@ export interface EventStoryProps {
 
 export function EventStory({ event, pinBase64 }: EventStoryProps) {
   const storyDate = parseEventStartDatetime(event.start_datetime);
+  const imageSrc = event.image_url ? cacheBustUrl(event.image_url) : null;
 
   return React.createElement(
     StoryLayout,
@@ -23,7 +25,7 @@ export function EventStory({ event, pinBase64 }: EventStoryProps) {
       { style: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden' } },
       event.image_url
         ? React.createElement('img', {
-            src: event.image_url,
+            src: imageSrc!,
             style: { position: 'absolute', top: '-20px', left: '-20px', width: 'calc(100% + 40px)', height: 'calc(100% + 40px)', objectFit: 'cover', filter: 'blur(20px) brightness(0.3)' },
           })
         : null,
@@ -58,7 +60,7 @@ export function EventStory({ event, pinBase64 }: EventStoryProps) {
         'div',
         { style: { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', marginBottom: '48px', maxHeight: '780px' } },
         event.image_url
-          ? React.createElement('img', { src: event.image_url, style: { maxWidth: '100%', maxHeight: '780px', objectFit: 'contain', borderRadius: '16px' } })
+          ? React.createElement('img', { src: imageSrc!, style: { maxWidth: '100%', maxHeight: '780px', objectFit: 'contain', borderRadius: '16px' } })
           : React.createElement('div', { style: { width: '100%', height: '400px', borderRadius: '16px', backgroundColor: 'rgba(255,255,255,0.05)' } })
       ),
       // Title
