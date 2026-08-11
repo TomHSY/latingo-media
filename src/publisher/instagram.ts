@@ -76,9 +76,27 @@ function isTransientPublishError(message: string): boolean {
   return (
     message.includes('9007') ||
     message.includes('2207027') ||
+    message.includes('An unknown error has occurred') ||
+    message.includes('"code":1') ||
     message.includes('not ready') ||
     message.includes('Media ID is not available')
   );
+}
+
+/** Retry a Graph API call on transient/unknown Meta errors with linear backoff. */
+async function withRetries<T>(label: string, fn: () => Promise<T>, maxAttempts = 4): Promise<T> {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (!isTransientPublishError(message) || attempt === maxAttempts) throw err;
+      const backoff = CONTAINER_POLL_INTERVAL_MS * attempt;
+      console.log(`  ⏳ ${label} transient error, retry ${attempt}/${maxAttempts - 1} in ${backoff / 1000}s...`);
+      await sleep(backoff);
+    }
+  }
+  throw new Error(`${label} failed after ${maxAttempts} attempts`);
 }
 
 /**
@@ -86,11 +104,13 @@ function isTransientPublishError(message: string): boolean {
  * Returns the container ID.
  */
 async function createItemContainer(imageUrl: string): Promise<string> {
-  const data = await apiPost(`/${USER_ID}/media`, {
-    image_url: imageUrl,
-    is_carousel_item: 'true',
+  return withRetries('carousel item container', async () => {
+    const data = await apiPost(`/${USER_ID}/media`, {
+      image_url: imageUrl,
+      is_carousel_item: 'true',
+    });
+    return data.id as string;
   });
-  return data.id as string;
 }
 
 /**
@@ -101,12 +121,14 @@ async function createCarouselContainer(
   itemIds: string[],
   caption: string
 ): Promise<string> {
-  const data = await apiPost(`/${USER_ID}/media`, {
-    media_type: 'CAROUSEL',
-    children: itemIds.join(','),
-    caption,
+  return withRetries('carousel container', async () => {
+    const data = await apiPost(`/${USER_ID}/media`, {
+      media_type: 'CAROUSEL',
+      children: itemIds.join(','),
+      caption,
+    });
+    return data.id as string;
   });
-  return data.id as string;
 }
 
 /**
@@ -166,10 +188,12 @@ export async function publishCarousel(imageUrls: string[], caption: string): Pro
  */
 export async function publishStory(imageUrl: string): Promise<string> {
   console.log('  Creating story container...');
-  const data = await apiPost(`/${USER_ID}/media`, {
-    image_url: imageUrl,
-    media_type: 'STORIES',
-  });
+  const data = await withRetries('story container', () =>
+    apiPost(`/${USER_ID}/media`, {
+      image_url: imageUrl,
+      media_type: 'STORIES',
+    })
+  );
   const containerId = data.id as string;
   console.log(`  ✓ Story container: ${containerId}`);
 
