@@ -14,7 +14,7 @@ import { CoverSlide, EventSlide, ClosingSlide } from '../templates/weekly-digest
 import { EventStory } from '../templates/ce-soir';
 import { generateCarouselCaption } from '../publisher/caption';
 import { uploadToDrive } from '../publisher/gdrive';
-import { getParisCalendarWeekCover, getParisWeekdayIndex } from '../utils/paris-time';
+import { getParisCalendarWeekCover, getParisWeekdayIndex, parseEventStartDatetime } from '../utils/paris-time';
 import { selectSpicyEvents } from '../utils';
 
 const logoBase64 = fs.readFileSync(path.resolve(__dirname, '..', 'assets', 'icon-text.png')).toString('base64');
@@ -65,6 +65,8 @@ async function main() {
 
   const activeEvents = activeEventsOnly(events);
   const { selected, recurringPenalizedCount, recurringCandidates, droppedDuplicates } = selectSpicyEvents(activeEvents, 4);
+  // Present slides and caption in chronological order.
+  selected.sort((a, b) => parseEventStartDatetime(a.start_datetime).getTime() - parseEventStartDatetime(b.start_datetime).getTime());
   const weekCover = getParisCalendarWeekCover(weekStart);
 
   console.log(`  Selected ${selected.length} events for carousel:`);

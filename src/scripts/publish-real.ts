@@ -14,7 +14,7 @@ import { uploadImages, listR2Keys } from '../publisher/upload';
 import { publishCarousel, publishStory } from '../publisher/instagram';
 import { publishFacebookAlbum } from '../publisher/facebook';
 import { generateCarouselCaption } from '../publisher/caption';
-import { getParisCalendarWeekCover, getParisDateLabel } from '../utils/paris-time';
+import { getParisCalendarWeekCover, getParisDateLabel, parseEventStartDatetime } from '../utils/paris-time';
 import { selectSpicyEvents } from '../utils';
 
 const OUTPUT_DIR = path.resolve(__dirname, '..', '..', 'output', 'real');
@@ -26,11 +26,12 @@ async function main() {
 
   const label = getParisDateLabel();
   const r2Prefix = `posts/${label}/carousel`;
-  const force = process.env.FORCE_PUBLISH === 'carousel';
+  // Idempotency: refuse to post a second carousel the same day unless explicitly told to.
+  const allowRepublish = process.env.REPUBLISH === 'true';
   const existingKeys = await listR2Keys(r2Prefix);
-  if (!force && existingKeys.length > 0) {
+  if (existingKeys.length > 0 && !allowRepublish) {
     console.log(
-      `⏭ Carousel already published for ${label} (${existingKeys.length} file(s) in R2 at ${r2Prefix}/). Skipping.`
+      `⏭ Carousel already published for ${label} (${existingKeys.length} file(s) in R2 at ${r2Prefix}/). Set REPUBLISH=true to republish.`
     );
     return;
   }
@@ -58,6 +59,8 @@ async function main() {
 
   const activeEvents = activeEventsOnly(events);
   const { selected, recurringPenalizedCount, recurringCandidates, droppedDuplicates } = selectSpicyEvents(activeEvents, 4);
+  // Present slides, stories and caption in chronological order.
+  selected.sort((a, b) => parseEventStartDatetime(a.start_datetime).getTime() - parseEventStartDatetime(b.start_datetime).getTime());
   const weekCover = getParisCalendarWeekCover();
 
   console.log(`  Selected ${selected.length} events:`);

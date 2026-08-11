@@ -9,7 +9,7 @@ import { renderToImage, closeBrowser } from '../renderer/render';
 import { fetchWeekendEvents, fetchEvents, activeEventsOnly } from '../api/client';
 import { CoverSlide, EventSlide, ClosingSlide } from '../templates/weekly-digest';
 import { EventStory } from '../templates/ce-soir';
-import { getParisCalendarWeekCover } from '../utils/paris-time';
+import { getParisCalendarWeekCover, parseEventStartDatetime } from '../utils/paris-time';
 import { selectSpicyEvents } from '../utils';
 
 const OUTPUT_DIR = path.resolve(__dirname, '..', '..', 'output', 'real');
@@ -42,6 +42,8 @@ async function main() {
 
   const activeEvents = activeEventsOnly(events);
   const { selected, recurringPenalizedCount, recurringCandidates, droppedDuplicates } = selectSpicyEvents(activeEvents, 4);
+  // Present slides, stories and caption in chronological order.
+  selected.sort((a, b) => parseEventStartDatetime(a.start_datetime).getTime() - parseEventStartDatetime(b.start_datetime).getTime());
   const weekCover = getParisCalendarWeekCover();
 
   console.log("  Selected " + selected.length + " events for carousel:");

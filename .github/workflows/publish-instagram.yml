@@ -18,6 +18,11 @@ on:
         description: Optional event UUID — republish one story only (with job=stories)
         required: false
         type: string
+      republish:
+        description: Re-post the carousel even if one was already published today
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: publish-instagram
@@ -55,6 +60,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           DRY_RUN: ${{ secrets.DRY_RUN }}
           FORCE_PUBLISH: ${{ github.event.inputs.job == 'carousel' && 'carousel' || '' }}
+          REPUBLISH: ${{ github.event.inputs.republish == 'true' && 'true' || '' }}
         run: npm run publish:carousel-if-scheduled
 
       - name: Publish stories (if scheduled or manual)
