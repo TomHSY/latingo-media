@@ -22,8 +22,13 @@ export interface MediaEvent {
   source_url?: string | null;
   website_url?: string | null;
   ticket_url?: string | null;
+  status?: 'active' | 'cancelled';
+  cancelled_at?: string | null;
+  cancellation_reason?: string | null;
   dance_types: EventDanceType[];
   rsvp_count?: number;
+  view_count?: number;
+  is_popular?: boolean;
 }
 
 export type MediaFormat = 'carousel' | 'story' | 'square';

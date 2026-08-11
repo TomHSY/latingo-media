@@ -69,21 +69,28 @@ export async function listR2Keys(prefix: string): Promise<string[]> {
   const keys: string[] = [];
   let continuationToken: string | undefined;
 
-  do {
-    const response = await s3.send(
-      new ListObjectsV2Command({
-        Bucket: BUCKET,
-        Prefix: `${normalized}/`,
-        ContinuationToken: continuationToken,
-      })
+  try {
+    do {
+      const response = await s3.send(
+        new ListObjectsV2Command({
+          Bucket: BUCKET,
+          Prefix: `${normalized}/`,
+          ContinuationToken: continuationToken,
+        })
+      );
+
+      for (const item of response.Contents ?? []) {
+        if (item.Key) keys.push(item.Key);
+      }
+
+      continuationToken = response.IsTruncated ? response.NextContinuationToken : undefined;
+    } while (continuationToken);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      `R2 list failed for prefix "${normalized}/". Check R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME and bucket permissions. Original error: ${message}`
     );
-
-    for (const item of response.Contents ?? []) {
-      if (item.Key) keys.push(item.Key);
-    }
-
-    continuationToken = response.IsTruncated ? response.NextContinuationToken : undefined;
-  } while (continuationToken);
+  }
 
   return keys;
 }

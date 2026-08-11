@@ -6,11 +6,11 @@ import React from 'react';
 import path from 'path';
 import fs from 'fs';
 import { renderToImage, closeBrowser } from '../renderer/render';
-import { fetchWeekendEvents, fetchEvents } from '../api/client';
+import { fetchWeekendEvents, fetchEvents, activeEventsOnly } from '../api/client';
 import { CoverSlide, EventSlide, ClosingSlide } from '../templates/weekly-digest';
 import { EventStory } from '../templates/ce-soir';
-import type { MediaEvent } from '../types';
 import { getParisCalendarWeekCover } from '../utils/paris-time';
+import { selectSpicyEvents } from '../utils';
 
 const OUTPUT_DIR = path.resolve(__dirname, '..', '..', 'output', 'real');
 const logoBase64 = fs.readFileSync(path.resolve(__dirname, '..', 'assets', 'icon-text.png')).toString('base64');
@@ -40,13 +40,19 @@ async function main() {
     process.exit(1);
   }
 
-  // Sort by RSVP (desc), then pick top 4 with city diversity
-  const sorted = [...events].sort((a, b) => (b.rsvp_count || 0) - (a.rsvp_count || 0));
-  const selected = selectDiverseEvents(sorted, 4);
+  const activeEvents = activeEventsOnly(events);
+  const { selected, recurringPenalizedCount, recurringCandidates } = selectSpicyEvents(activeEvents, 4);
   const weekCover = getParisCalendarWeekCover();
 
   console.log("  Selected " + selected.length + " events for carousel:");
   selected.forEach((e) => console.log("    \u2022 " + e.title + " (" + e.city + ")"));
+  if (recurringPenalizedCount > 0) {
+    console.log('  Applied recurring down-rank heuristic to selection candidates.');
+  }
+  if (recurringCandidates.length > 0) {
+    console.log('  Likely recurring candidates detected:');
+    recurringCandidates.forEach((e) => console.log("    - " + e.title + " (" + (e.city || 'unknown') + ")"));
+  }
   console.log('');
 
   // --- COVER SLIDE ---
@@ -75,7 +81,7 @@ async function main() {
 
   // --- CLOSING SLIDE ---
   console.log('  \u2192 Rendering closing slide...');
-  const remaining = events.length - selected.length;
+  const remaining = activeEvents.length - selected.length;
   await renderToImage({
     format: 'carousel',
     outputPath: path.join(OUTPUT_DIR, 'carousel', "0" + (selected.length + 2) + "-closing.png"),
@@ -97,34 +103,6 @@ async function main() {
   await closeBrowser();
   console.log('\n\u2705 All renders complete!');
   console.log('   Check output at: ' + OUTPUT_DIR);
-}
-
-/**
- * Select events with city diversity - avoid 2 events from the same city.
- */
-function selectDiverseEvents(sorted: MediaEvent[], count: number): MediaEvent[] {
-  const selected: MediaEvent[] = [];
-  const usedCities = new Set<string>();
-
-  for (const event of sorted) {
-    if (selected.length >= count) break;
-    const city = event.city || '';
-    if (!usedCities.has(city) || selected.length >= count - 1) {
-      selected.push(event);
-      usedCities.add(city);
-    }
-  }
-
-  if (selected.length < count) {
-    for (const event of sorted) {
-      if (selected.length >= count) break;
-      if (!selected.includes(event)) {
-        selected.push(event);
-      }
-    }
-  }
-
-  return selected;
 }
 
 main().catch((err) => {

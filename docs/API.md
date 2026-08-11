@@ -102,6 +102,12 @@ Shipped in main app (June 2026). Organizers/admins soft-cancel events; they stay
 2. **Stories:** include cancelled events with an "ANNULÉE" visual mark (and `cancellation_reason` when present). Users need to know when a soirée is off.
 3. **Future:** dedicated "Soirée annulée" story template for previously featured events — see [strategy/ROADMAP.md](strategy/ROADMAP.md).
 
+Recurring events:
+
+- API currently does not expose recurring flags/series metadata.
+- Weekly carousel therefore uses a best-effort recurring down-rank heuristic (title/source/time patterns) instead of strict exclusion.
+- Strict recurring exclusion requires upstream API model changes in `latingo-app`.
+
 **Endpoints you do NOT call:** `POST /events/{id}/cancel`, `POST /events/{id}/reinstate`, `DELETE /events/{id}`.
 
 ## TypeScript types

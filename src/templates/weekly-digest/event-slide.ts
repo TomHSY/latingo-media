@@ -4,6 +4,7 @@ import { DanceTypePills } from '../../components/DanceTypePill';
 import { EventImage } from '../../components/EventImage';
 import { colors, typography } from '../../tokens/noche';
 import { formatDateFrench, formatTimeFrench } from '../../utils/dates';
+import { cacheBustUrl } from '../../utils/urls';
 import type { MediaEvent } from '../../types';
 
 export interface EventSlideProps {
@@ -13,6 +14,7 @@ export interface EventSlideProps {
 
 export function EventSlide({ event, pinBase64 }: EventSlideProps) {
   const startDt = new Date(event.start_datetime);
+  const imageSrc = event.image_url ? cacheBustUrl(event.image_url) : null;
 
   return React.createElement(
     CarouselSlideLayout,
@@ -28,9 +30,9 @@ export function EventSlide({ event, pinBase64 }: EventSlideProps) {
         },
       },
       // Layer 1: Blurred backdrop
-      event.image_url
+      imageSrc
         ? React.createElement('img', {
-            src: event.image_url,
+            src: imageSrc,
             style: {
               position: 'absolute',
               top: '-20px',
@@ -102,9 +104,9 @@ export function EventSlide({ event, pinBase64 }: EventSlideProps) {
               overflow: 'hidden',
             },
           },
-          event.image_url
+          imageSrc
             ? React.createElement('img', {
-                src: event.image_url,
+                src: imageSrc,
                 style: {
                   maxWidth: '100%',
                   maxHeight: '750px',

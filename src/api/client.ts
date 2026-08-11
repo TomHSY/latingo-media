@@ -81,3 +81,17 @@ export async function fetchWeekendEvents(): Promise<MediaEvent[]> {
     sort_by: 'date_asc',
   });
 }
+
+/**
+ * Keep only active events for carousel selection and counting.
+ */
+export function activeEventsOnly(events: MediaEvent[]): MediaEvent[] {
+  return events.filter((event) => (event.status ?? 'active') !== 'cancelled');
+}
+
+/**
+ * Keep only cancelled events for dedicated cancellation views.
+ */
+export function cancelledEventsOnly(events: MediaEvent[]): MediaEvent[] {
+  return events.filter((event) => event.status === 'cancelled');
+}

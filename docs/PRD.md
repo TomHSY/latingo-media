@@ -16,6 +16,7 @@ Instagram is a **teaser**, not the product. See [strategy/CONTEXT.md](strategy/C
 2. Show image + title + city + dance type only — no address, ticket link, or full description
 3. **Carousels:** never include cancelled events
 4. **Stories:** cancelled events appear with "ANNULÉE" mark so users are informed
+5. **Stories links:** the current Graph API flow is image-only; clickable link stickers are deferred until official API support
 
 ## Content calendar
 
@@ -25,6 +26,8 @@ All times **Europe/Paris**.
 |----------|--------|---------|
 | Tuesday 14:00 | Carousel (4:5) | "Où danser ce week-end?" — 4 selected events |
 | Daily 12:00 | Story (×N) | One story per event happening that day |
+
+Weekly carousel selection prioritizes spicy picks with dance diversity and city freshness. Likely recurring events are down-ranked (not hard-excluded) until recurring metadata is exposed by the API.
 
 Automated via GitHub Actions — see [DEPLOYMENT.md](DEPLOYMENT.md).
 

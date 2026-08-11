@@ -24,6 +24,9 @@ function sleep(ms: number): Promise<void> {
 async function main() {
   const singleEventId = process.env.STORY_EVENT_ID?.trim();
 
+  console.log('ℹ Story links: clickable link stickers are not available via the current Instagram Graph API publish flow.');
+  console.log('  Stories are published as image-only media until official API support exists.\n');
+
   const { label, events, audit, excluded } = await fetchTodayStoryEvents({
     includeIsoDateFallback: true,
   });

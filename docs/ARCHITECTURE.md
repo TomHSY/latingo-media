@@ -31,9 +31,12 @@ Story scripts may include cancelled events; `EventStory` applies visual "ANNULÉ
 
 1. Fetch events for date range
 2. Filter to active only (`status !== 'cancelled'`)
-3. Sort by RSVP count (descending)
-4. Select top 4 with **city diversity** (max one per city when possible)
-5. Closing slide: total active events minus 4
+3. Score and rank candidates with RSVP/views/popularity plus diversity bonuses
+4. Apply recurring down-rank heuristic (no hard exclusion without API metadata)
+5. Select top 4 with **city diversity** and **dance diversity** bonuses
+6. Closing slide: total active events minus 4
+
+Story publication remains image-only with current Instagram Graph API integration. Clickable link stickers are deferred until official API support is available.
 
 ## Image handling
 
