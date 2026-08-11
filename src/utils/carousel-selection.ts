@@ -18,6 +18,53 @@ function normalize(value: string | null | undefined): string {
   return (value || '').trim().toLowerCase();
 }
 
+/** Collapse a title to a comparable key: strip accents, punctuation, dates, times, and spacing. */
+function titleKey(title: string): string {
+  return normalize(title)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\b\d{1,2}[h:]\d{0,2}\b/g, '')
+    .replace(/\b\d{1,2}\s*(janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre)\b/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+/** Prefer the row with more social proof, then the most recently created (likely the edited/cropped one). */
+function preferRow(a: MediaEvent, b: MediaEvent): MediaEvent {
+  const byRsvp = (b.rsvp_count || 0) - (a.rsvp_count || 0);
+  if (byRsvp !== 0) return byRsvp < 0 ? a : b;
+  const byViews = (b.view_count || 0) - (a.view_count || 0);
+  if (byViews !== 0) return byViews < 0 ? a : b;
+  const at = a.created_at ? Date.parse(a.created_at) : 0;
+  const bt = b.created_at ? Date.parse(b.created_at) : 0;
+  return bt > at ? b : a;
+}
+
+/** Remove duplicate rows for the same real event (same/similar title returned under different IDs). */
+export function dedupeByTitle(events: MediaEvent[]): { deduped: MediaEvent[]; dropped: MediaEvent[] } {
+  const bestByKey = new Map<string, MediaEvent>();
+  const dropped: MediaEvent[] = [];
+
+  for (const event of events) {
+    const key = titleKey(event.title);
+    if (!key) {
+      bestByKey.set(`__id:${event.id}`, event);
+      continue;
+    }
+    const existing = bestByKey.get(key);
+    if (!existing) {
+      bestByKey.set(key, event);
+      continue;
+    }
+    const winner = preferRow(existing, event);
+    const loser = winner === existing ? event : existing;
+    bestByKey.set(key, winner);
+    dropped.push(loser);
+  }
+
+  return { deduped: [...bestByKey.values()], dropped };
+}
+
 function hasRecurringKeyword(value: string): boolean {
   return /\b(hebdo|hebdomadaire|weekly|tous les|chaque|every|mensuel|mensuelle|monthly|edition|édition|viernes|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|afterwork|social|practica|practice)\b/i.test(value);
 }
@@ -99,15 +146,19 @@ export interface SelectionResult {
   ranked: MediaEvent[];
   recurringPenalizedCount: number;
   recurringCandidates: MediaEvent[];
+  droppedDuplicates: { kept: string; dropped: string }[];
 }
 
 /**
  * Pick a spicy carousel set with diversity bonuses and recurring down-rank.
  */
 export function selectSpicyEvents(events: MediaEvent[], count: number): SelectionResult {
-  // Guard against API returning duplicate IDs
-  const seen = new Set<string>();
-  const deduped = events.filter((e) => (seen.has(e.id) ? false : (seen.add(e.id), true)));
+  // Same real event can arrive as multiple rows (different IDs) with same/similar title — collapse them.
+  const { deduped, dropped } = dedupeByTitle(events);
+  const droppedDuplicates = dropped.map((d) => {
+    const kept = deduped.find((k) => titleKey(k.title) === titleKey(d.title));
+    return { kept: kept ? kept.id : '?', dropped: d.id };
+  });
 
   const pool = [...deduped];
   const selected: MediaEvent[] = [];
@@ -150,5 +201,5 @@ export function selectSpicyEvents(events: MediaEvent[], count: number): Selectio
     return bs - as;
   });
 
-  return { selected, ranked, recurringPenalizedCount, recurringCandidates };
+  return { selected, ranked, recurringPenalizedCount, recurringCandidates, droppedDuplicates };
 }

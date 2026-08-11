@@ -41,7 +41,7 @@ async function main() {
   }
 
   const activeEvents = activeEventsOnly(events);
-  const { selected, recurringPenalizedCount, recurringCandidates } = selectSpicyEvents(activeEvents, 4);
+  const { selected, recurringPenalizedCount, recurringCandidates, droppedDuplicates } = selectSpicyEvents(activeEvents, 4);
   const weekCover = getParisCalendarWeekCover();
 
   console.log("  Selected " + selected.length + " events for carousel:");
@@ -52,6 +52,9 @@ async function main() {
   if (recurringCandidates.length > 0) {
     console.log('  Likely recurring candidates detected:');
     recurringCandidates.forEach((e) => console.log("    - " + e.title + " (" + (e.city || 'unknown') + ")"));
+  }
+  if (droppedDuplicates.length > 0) {
+    console.log("  Collapsed " + droppedDuplicates.length + " duplicate row(s): kept/dropped " + droppedDuplicates.map((d) => d.kept + "←" + d.dropped).join(', '));
   }
   console.log('');
 

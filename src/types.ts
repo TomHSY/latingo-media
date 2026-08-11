@@ -28,6 +28,7 @@ export interface MediaEvent {
   dance_types: EventDanceType[];
   rsvp_count?: number;
   view_count?: number;
+  created_at?: string | null;
   is_popular?: boolean;
 }
 
