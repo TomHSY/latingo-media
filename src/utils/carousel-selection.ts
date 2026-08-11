@@ -105,22 +105,21 @@ export interface SelectionResult {
  * Pick a spicy carousel set with diversity bonuses and recurring down-rank.
  */
 export function selectSpicyEvents(events: MediaEvent[], count: number): SelectionResult {
-  const pool = [...events];
+  // Guard against API returning duplicate IDs
+  const seen = new Set<string>();
+  const deduped = events.filter((e) => (seen.has(e.id) ? false : (seen.add(e.id), true)));
+
+  const pool = [...deduped];
   const selected: MediaEvent[] = [];
   const usedCities = new Set<string>();
   const usedDays = new Set<string>();
   const usedDanceSlugs = new Set<string>();
-  let recurringPenalizedCount = 0;
-  const recurringCandidates = events.filter((event) => isLikelyRecurring(event));
+  const recurringCandidates = deduped.filter((event) => isLikelyRecurring(event));
 
   while (selected.length < count && pool.length > 0) {
     const scoredPool = pool.map((event, idx) => ({ idx, ...scoreCandidate(event, usedCities, usedDays, usedDanceSlugs) }));
     const nonRecurringPool = scoredPool.filter((candidate) => !candidate.isLikelyRecurring);
     const candidatePool = nonRecurringPool.length > 0 ? nonRecurringPool : scoredPool;
-
-    if (nonRecurringPool.length > 0) {
-      recurringPenalizedCount += scoredPool.length - nonRecurringPool.length;
-    }
 
     let bestCandidate = candidatePool[0];
     for (let i = 1; i < candidatePool.length; i++) {
@@ -139,12 +138,13 @@ export function selectSpicyEvents(events: MediaEvent[], count: number): Selectio
     for (const danceType of picked.dance_types || []) {
       usedDanceSlugs.add(danceType.slug);
     }
-    if (bestCandidate.isLikelyRecurring) {
-      recurringPenalizedCount += 1;
-    }
   }
 
-  const ranked = [...events].sort((a, b) => {
+  const recurringPenalizedCount = recurringCandidates.filter(
+    (rc) => !selected.some((s) => s.id === rc.id)
+  ).length;
+
+  const ranked = [...deduped].sort((a, b) => {
     const as = scoreCandidate(a, new Set<string>(), new Set<string>(), new Set<string>()).score;
     const bs = scoreCandidate(b, new Set<string>(), new Set<string>(), new Set<string>()).score;
     return bs - as;

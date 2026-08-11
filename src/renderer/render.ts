@@ -12,7 +12,8 @@ let browser: Browser | null = null;
  */
 async function getBrowser(): Promise<Browser> {
   if (!browser) {
-    browser = await chromium.launch({ headless: true });
+    // --disable-cache prevents stale images when organisers re-upload to the same CDN key
+    browser = await chromium.launch({ headless: true, args: ['--disable-cache'] });
   }
   return browser;
 }
@@ -67,7 +68,7 @@ export async function renderToImage(options: RenderOptions): Promise<string> {
   await page.route('**/*', (route) => {
     const headers = {
       ...route.request().headers(),
-      'Cache-Control': 'no-cache',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
       Pragma: 'no-cache',
     };
     void route.continue({ headers });
