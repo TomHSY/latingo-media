@@ -35,12 +35,14 @@ async function main() {
 
   const r2Prefix = `posts/${label}/stories-daily`;
   const force = process.env.FORCE_PUBLISH === 'stories' || !!singleEventId;
-  const existingKeys = await listR2Keys(r2Prefix);
-  if (!force && existingKeys.length > 0) {
-    console.log(
-      `⏭ Stories already published for ${label} (${existingKeys.length} file(s) in R2 at ${r2Prefix}/). Skipping.`
-    );
-    return;
+  if (!force) {
+    const existingKeys = await listR2Keys(r2Prefix);
+    if (existingKeys.length > 0) {
+      console.log(
+        `⏭ Stories already published for ${label} (${existingKeys.length} file(s) in R2 at ${r2Prefix}/). Skipping.`
+      );
+      return;
+    }
   }
 
   if (events.length === 0) {
