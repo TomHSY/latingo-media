@@ -12,6 +12,8 @@
     "publish:stories-today": "node scripts/run-tsx.mjs src/scripts/publish-stories-today.ts",
     "publish:carousel-if-scheduled": "node scripts/run-tsx.mjs src/scripts/publish-carousel-if-scheduled.ts",
     "publish:stories-if-scheduled": "node scripts/run-tsx.mjs src/scripts/publish-stories-if-scheduled.ts",
+    "publish:cancelled-story": "node scripts/run-tsx.mjs src/scripts/publish-cancelled-story.ts",
+    "render:cancelled-story": "node scripts/run-tsx.mjs src/scripts/publish-cancelled-story.ts",
     "test:api": "node scripts/run-tsx.mjs src/scripts/test-api.ts",
     "test:stories-today": "node scripts/run-tsx.mjs src/scripts/test-stories-today.ts",
     "typecheck": "tsc --noEmit"
