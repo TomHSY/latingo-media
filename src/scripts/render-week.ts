@@ -122,7 +122,7 @@ async function main() {
 
   for (let i = 0; i < events.length; i++) {
     const event = events[i];
-    const eventDate = new Date(event.start_datetime);
+    const eventDate = parseEventStartDatetime(event.start_datetime);
     const dayName = DAYS_FR[getParisWeekdayIndex(eventDate)];
     dayCounters[dayName] = (dayCounters[dayName] || 0) + 1;
     const dayIdx = String(dayCounters[dayName]).padStart(2, '0');

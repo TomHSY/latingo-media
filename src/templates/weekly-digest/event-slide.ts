@@ -4,6 +4,7 @@ import { DanceTypePills } from '../../components/DanceTypePill';
 import { EventImage } from '../../components/EventImage';
 import { colors, typography } from '../../tokens/noche';
 import { formatDateFrench, formatTimeFrench } from '../../utils/dates';
+import { parseEventStartDatetime } from '../../utils/paris-time';
 import { cacheBustUrl } from '../../utils/urls';
 import type { MediaEvent } from '../../types';
 
@@ -13,7 +14,7 @@ export interface EventSlideProps {
 }
 
 export function EventSlide({ event, pinBase64 }: EventSlideProps) {
-  const startDt = new Date(event.start_datetime);
+  const startDt = parseEventStartDatetime(event.start_datetime);
   const imageSrc = event.image_url ? cacheBustUrl(event.image_url) : null;
 
   return React.createElement(

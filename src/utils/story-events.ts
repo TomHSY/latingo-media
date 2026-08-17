@@ -118,7 +118,11 @@ export async function fetchTodayStoryEvents(options?: {
 
   const events = audit
     .map((a) => a.event)
-    .sort((a, b) => new Date(a.start_datetime).getTime() - new Date(b.start_datetime).getTime());
+    .sort(
+      (a, b) =>
+        parseEventStartDatetime(a.start_datetime).getTime() -
+        parseEventStartDatetime(b.start_datetime).getTime()
+    );
 
   return {
     label,

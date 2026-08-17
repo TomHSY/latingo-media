@@ -15,6 +15,7 @@
     "publish:cancelled-story": "node scripts/run-tsx.mjs src/scripts/publish-cancelled-story.ts",
     "render:cancelled-story": "node scripts/run-tsx.mjs src/scripts/publish-cancelled-story.ts",
     "test:api": "node scripts/run-tsx.mjs src/scripts/test-api.ts",
+    "test:paris-time": "node scripts/run-tsx.mjs src/scripts/test-paris-time.ts",
     "test:stories-today": "node scripts/run-tsx.mjs src/scripts/test-stories-today.ts",
     "typecheck": "tsc --noEmit"
   },

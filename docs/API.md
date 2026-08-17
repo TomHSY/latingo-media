@@ -48,13 +48,17 @@ Authorization: Bearer {token}
 
 ## EventOut response shape
 
+**Datetime format (important):** Production returns `start_datetime` and `end_datetime` as **naive ISO strings without timezone** — local wall-clock time in Europe/Paris. Example: `"2026-08-15T23:00:00"` means 23:00 Paris, not UTC. The main-repo schema may document `Z`-suffixed UTC; the live API currently serializes without offset.
+
+**Media engine rule:** Always parse event datetimes with `parseEventStartDatetime()` in [`src/utils/paris-time.ts`](../src/utils/paris-time.ts). Never use raw `new Date(naiveString)` — on CI (UTC) that shifts times by ±2h and can roll the calendar day.
+
 ```json
 {
   "id": "uuid-string",
   "title": "Soirée Salsa",
   "description": "...",
-  "start_datetime": "2026-06-27T20:00:00Z",
-  "end_datetime": "2026-06-28T02:00:00Z",
+  "start_datetime": "2026-06-27T20:00:00",
+  "end_datetime": "2026-06-28T02:00:00",
   "latitude": 43.493,
   "longitude": -1.474,
   "address": "12 rue ...",
@@ -130,6 +134,15 @@ fetchWeekendEvents()        // Fri–Sun window in Europe/Paris → date_from / 
 activeEventsOnly(events)    // for carousel selection
 cancelledEventsOnly(events) // for cancelled story renders
 ```
+
+Datetime parsing in `src/utils/paris-time.ts`:
+
+```typescript
+parseEventStartDatetime(iso)  // naive → Paris local; Z/offset → absolute UTC
+parseAsParisLocal(iso)        // force Paris-local interpretation
+```
+
+Regression test: `TZ=UTC npm run test:paris-time` (also runs in CI).
 
 Apply `activeEventsOnly()` in carousel scripts **before** sorting by RSVP / city diversity. Do **not** filter inside `fetchEvents` — story scripts need all events.
 

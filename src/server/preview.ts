@@ -9,6 +9,7 @@ import { DanceTypePills } from '../components/DanceTypePill';
 import { EventImage } from '../components/EventImage';
 import { colors, typography, fontImportUrl } from '../tokens/noche';
 import { formatDateFrench, formatTimeFrench, formatDateRange } from '../utils/dates';
+import { parseEventStartDatetime } from '../utils/paris-time';
 
 const app = express();
 const PORT = 3456;
@@ -148,7 +149,7 @@ app.get('/preview/carousel/event/:index', (req, res) => {
     return;
   }
 
-  const startDate = new Date(event.start_datetime);
+  const startDate = parseEventStartDatetime(event.start_datetime);
 
   const element = React.createElement(
     CarouselSlideLayout,
@@ -324,7 +325,7 @@ app.get('/preview/story/event/:index', (req, res) => {
     return;
   }
 
-  const startDate = new Date(event.start_datetime);
+  const startDate = parseEventStartDatetime(event.start_datetime);
 
   const element = React.createElement(
     StoryLayout,
