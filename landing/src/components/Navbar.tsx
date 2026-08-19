@@ -15,12 +15,25 @@ export default function Navbar() {
           <span className="font-bold text-2xl md:text-3xl text-primary-text">LatinGo</span>
         </a>
 
-        <div className="hidden sm:flex items-center gap-6 text-sm">
-          <a href="#organisateurs" className="text-secondary-text hover:text-primary-text transition-colors">
+        <div className="flex items-center gap-4 sm:gap-6 text-sm">
+          <a
+            href="#organisateurs"
+            className="hidden sm:inline text-secondary-text hover:text-primary-text transition-colors"
+          >
             Organisateurs
           </a>
-          <a href="#faq" className="text-secondary-text hover:text-primary-text transition-colors">
+          <a
+            href="#faq"
+            className="hidden sm:inline text-secondary-text hover:text-primary-text transition-colors"
+          >
             FAQ
+          </a>
+          <a
+            href="#telecharger"
+            data-event="cta_navbar_download"
+            className="bg-coral text-white font-bold px-4 py-2 rounded-lg hover:bg-coral/90 transition-colors"
+          >
+            Télécharger
           </a>
         </div>
       </div>

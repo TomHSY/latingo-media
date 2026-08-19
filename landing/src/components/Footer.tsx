@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { CONTACT_EMAIL, FACEBOOK_URL, INSTAGRAM_URL, PLAY_STORE_URL } from '../constants'
+import { APP_STORE_URL, CONTACT_EMAIL, FACEBOOK_URL, INSTAGRAM_URL, PLAY_STORE_URL } from '../constants'
 
 function SocialIcon({ href, label, children }: { href: string; label: string; children: ReactNode }) {
   return (
@@ -40,17 +40,6 @@ export default function Footer() {
 
         <div className="border-t border-[#1C1C24] my-6" />
 
-        <p className="text-secondary-text mb-2">Tu organises des soirées SBK ?</p>
-        <a
-          href="#organisateurs"
-          data-event="footer_organizers"
-          className="text-coral font-medium hover:underline"
-        >
-          Rejoins LatinGo en tant qu'organisateur
-        </a>
-
-        <div className="border-t border-[#1C1C24] my-6" />
-
         <div className="text-secondary-text text-sm space-y-1">
           <p>
             <a
@@ -60,7 +49,7 @@ export default function Footer() {
               {CONTACT_EMAIL}
             </a>
           </p>
-          <p>
+          <p className="flex items-center justify-center gap-4">
             <a
               href={PLAY_STORE_URL}
               target="_blank"
@@ -68,6 +57,15 @@ export default function Footer() {
               className="hover:text-coral transition-colors"
             >
               Google Play
+            </a>
+            <span aria-hidden="true">·</span>
+            <a
+              href={APP_STORE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-coral transition-colors"
+            >
+              App Store
             </a>
           </p>
           <p className="pt-2">© 2026 LatinGo. Tous droits réservés.</p>

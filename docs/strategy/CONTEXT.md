@@ -52,4 +52,4 @@ All times **Europe/Paris**. Automated publish — see [DEPLOYMENT.md](../DEPLOYM
 
 ## Landing page
 
-Early Access funnel at [www.latingo.fr](https://www.latingo.fr) — see [LANDING.md](../LANDING.md). Same brand voice; converts dancers to waitlist signups via Formspree.
+Marketing funnel at [www.latingo.fr](https://www.latingo.fr) — see [LANDING.md](../LANDING.md) and [site_context.md](../../site_context.md). Same brand voice; converts dancers to **Play Store + App Store downloads** with live event previews and a secondary organizer recruitment block. iOS waitlist (Formspree) removed Aug 2026 — both mobile platforms are live.

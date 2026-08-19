@@ -37,7 +37,7 @@ export default function Screenshots() {
   const next = () => setActive((i) => (i === slides.length - 1 ? 0 : i + 1))
 
   return (
-    <section className="bg-background py-14 md:py-20 overflow-hidden">
+    <section className="bg-surface py-14 md:py-20 overflow-hidden">
       <div
         ref={ref}
         className={`max-w-4xl mx-auto px-4 transition-all duration-700 ${
@@ -52,7 +52,7 @@ export default function Screenshots() {
         </p>
 
         <div className="relative flex flex-col items-center">
-          <div className="relative w-[260px] md:w-[280px]">
+          <div className="relative w-[320px] md:w-[360px]">
             <div className="absolute inset-0 rounded-[2.5rem] bg-coral/15 blur-3xl scale-110" />
             <div className="relative rounded-[2.5rem] border-[6px] border-[#2a2a35] bg-[#0a0a0e] shadow-2xl overflow-hidden">
               <div className="absolute top-0 inset-x-0 h-6 bg-[#0a0a0e] z-10 flex items-center justify-center">
@@ -71,12 +71,12 @@ export default function Screenshots() {
             {slides[active].caption}
           </p>
 
-          <div className="flex items-center gap-4 mt-4">
+          <div className="flex items-center gap-5 mt-5">
             <button
               type="button"
               onClick={prev}
               aria-label="Capture précédente"
-              className="w-10 h-10 rounded-full bg-background border border-[#2a2a35] text-primary-text hover:border-coral transition-colors"
+              className="w-14 h-14 rounded-full bg-coral/20 border-2 border-coral text-primary-text text-xl font-bold hover:bg-coral hover:text-white transition-colors shadow-lg"
             >
               ←
             </button>
@@ -88,7 +88,7 @@ export default function Screenshots() {
                   type="button"
                   onClick={() => setActive(i)}
                   aria-label={`Capture ${i + 1}`}
-                  className={`w-2 h-2 rounded-full transition-colors ${
+                  className={`w-2.5 h-2.5 rounded-full transition-colors ${
                     i === active ? 'bg-coral' : 'bg-[#2a2a35]'
                   }`}
                 />
@@ -99,7 +99,7 @@ export default function Screenshots() {
               type="button"
               onClick={next}
               aria-label="Capture suivante"
-              className="w-10 h-10 rounded-full bg-background border border-[#2a2a35] text-primary-text hover:border-coral transition-colors"
+              className="w-14 h-14 rounded-full bg-coral/20 border-2 border-coral text-primary-text text-xl font-bold hover:bg-coral hover:text-white transition-colors shadow-lg"
             >
               →
             </button>

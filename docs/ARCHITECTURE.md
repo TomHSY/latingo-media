@@ -7,7 +7,7 @@ This repository contains two independent subprojects:
 | Path | Purpose | Stack |
 |------|---------|-------|
 | `src/` | Media engine — render social PNGs from API data | React SSR + Playwright + Node |
-| `landing/` | Early Access marketing site | React + Vite + Tailwind |
+| `landing/` | Marketing site (app download funnel) | React + Vite + Tailwind |
 
 See [LANDING.md](LANDING.md) for the landing subproject.
 

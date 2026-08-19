@@ -10,7 +10,7 @@
 - Ce Soir story template (Template 2)
 - Template extraction into `src/templates/weekly-digest/` and `src/templates/ce-soir/`
 - Publisher scaffold: Instagram Graph, Facebook, R2 upload, Google Drive, captions
-- Early Access landing page at www.latingo.fr
+- Marketing landing page at www.latingo.fr (Aug 2026 overhaul: both-store CTAs, local proof, live events preview)
 
 ## Phase 2.5 — API hygiene (current)
 
