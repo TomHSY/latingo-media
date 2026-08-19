@@ -11,7 +11,8 @@ export default function Hero() {
         alt="Ambiance soirée danse latine"
         className="absolute inset-0 w-full h-full object-cover"
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-[rgba(15,15,20,0.2)] to-[rgba(15,15,20,0.85)]" />
+      <div className="absolute inset-0 bg-[#0F0F14]/50" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[rgba(15,15,20,0.55)] via-[rgba(15,15,20,0.78)] to-[rgba(15,15,20,0.95)]" />
 
       <div
         ref={ref}
