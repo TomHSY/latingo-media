@@ -48,7 +48,7 @@ Defined in `landing/src/constants.ts`:
 | Link | URL |
 |------|-----|
 | Google Play | `https://play.google.com/store/apps/details?id=fr.latingo.app` |
-| App Store | `https://apps.apple.com/app/id6783507682` |
+| App Store | `https://apps.apple.com/fr/app/latingo/id6783507682` |
 | Instagram | `https://www.instagram.com/latingo.fr/` |
 | Facebook | `https://www.facebook.com/profile.php?id=61590203503679` |
 | Contact | `contact@latingo.fr` |
