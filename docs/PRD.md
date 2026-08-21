@@ -58,7 +58,16 @@ Implementation: `src/templates/ce-soir/EventStory`
 | 5 | Map digest | Pins on map — future |
 | 6 | New event alert | "Nouvelle soirée ajoutée 🆕" |
 | 7 | Weekly stats | "Cette semaine sur LatinGo" — optional |
-| 8 | Seasonal/thematic | Manual trigger (été, festivals) |
+| 8 | Seasonal/thematic | Manual trigger (été, festivals, **rentrée** September restart) |
+| 9 | Cross-border | **"L'autre côté de la frontière"** — FR vs ES weekend event counts; wedge differentiator |
+
+### Pending / gaps (not templates)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| **Organizer `@`-tagging** | Planned | Caption append from latingo-app playbook `ig_handle` or future API; not in `caption.ts` yet |
+| **Reels / video** | Gap | No video pipeline; IRL footage published manually |
+| **Facebook Page** | Code shipped | Enable when `FB_PAGE_ACCESS_TOKEN` + `FB_PAGE_ID` set — see DEPLOYMENT.md |
 
 ### Future: Soirée annulée story
 

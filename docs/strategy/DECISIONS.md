@@ -15,3 +15,6 @@ Locked technical and product choices. Add new rows when making irreversible deci
 | — | Instagram = teaser, app = product | Scarcity rules; no full event details on social |
 | — | Separate repo from latingo-app | Media engine is read-only API consumer; independent deploy cadence |
 | — | Landing in same repo, separate build | Shared brand; `landing/` has own Vite config and GitHub Pages deploy |
+| 2026-08-21 | Own-channel Meta publishing is sanctioned | Publishing to **our own** IG/FB via Graph API is in scope. Distinct from latingo-app's killed **WhatsApp group automation** (third-party groups, ban risk). See latingo-app `DECISIONS.md` 2026-08-21. |
+| 2026-08-21 | Lead with completeness, not user count | Marketing copy uses event-completeness ("500+ soirées") not install/user counts until scale justifies it. Aligns with neutral brand voice. |
+| 2026-08-21 | Facebook Page publish — enable next | Code exists in `src/publisher/facebook.ts`; deferred only until `FB_PAGE_ACCESS_TOKEN` + `FB_PAGE_ID` are set. Promote from "future" to near-term. |
