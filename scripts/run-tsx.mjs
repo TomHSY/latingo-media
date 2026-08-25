@@ -17,7 +17,11 @@ export function runTsxScript(scriptPath, options = {}) {
   if (process.platform === 'win32' || process.platform === 'darwin') {
     tsxArgs.push('--use-system-ca');
   }
-  tsxArgs.push(scriptPath, ...args);
+  // Relative path: Windows `shell: true` splits unquoted absolute paths on spaces
+  // (this repo lives under `Projets perso`).
+  const absScript = path.resolve(repoRoot, scriptPath);
+  const relScript = path.relative(cwd, absScript).split(path.sep).join('/');
+  tsxArgs.push(relScript, ...args);
 
   return spawnSync('npx', tsxArgs, {
     stdio: 'inherit',

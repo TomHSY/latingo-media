@@ -23,6 +23,7 @@
     "test:api": "node scripts/run-tsx.mjs src/scripts/test-api.ts",
     "test:paris-time": "node scripts/run-tsx.mjs src/scripts/test-paris-time.ts",
     "test:stories-today": "node scripts/run-tsx.mjs src/scripts/test-stories-today.ts",
+    "merge:launch-lists": "node scripts/run-tsx.mjs src/scripts/merge-launch-lists.ts",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [],
