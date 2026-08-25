@@ -3,6 +3,8 @@
  */
 import OpenAI from 'openai';
 import type { MediaEvent } from '../types';
+import { formatDateFrench } from '../utils/dates';
+import { parseEventStartDatetime } from '../utils/paris-time';
 import 'dotenv/config';
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -25,12 +27,7 @@ export async function generateCarouselCaption(
 
   const eventList = events
     .map((e) => {
-      const date = new Date(e.start_datetime).toLocaleDateString('fr-FR', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-        timeZone: 'Europe/Paris',
-      });
+      const date = formatDateFrench(parseEventStartDatetime(e.start_datetime));
       const danceTypes = e.dance_types.map((d) => d.label_fr).join(', ') || 'Danse latine';
       const rsvp = e.rsvp_count ? ` · ${e.rsvp_count} inscrits` : '';
       return `- ${e.title} · ${e.city} · ${date} · ${danceTypes}${rsvp}`;

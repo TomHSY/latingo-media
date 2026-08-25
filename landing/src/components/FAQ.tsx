@@ -8,20 +8,20 @@ const faqs = [
     answer: 'Oui, totalement gratuit pour les danseurs. Aujourd\'hui et pour toujours.',
   },
   {
-    question: 'Android et iPhone ?',
-    answer: 'LatinGo est disponible sur Android via le Google Play Store. La version iPhone arrive très bientôt — inscris-toi à la liste d\'attente iOS pour être informé en premier.',
+    question: 'Disponible sur Android et iOS ?',
+    answer: 'Oui. LatinGo est disponible sur Android (Google Play) et iOS (App Store).',
   },
   {
     question: 'Comment vous trouvez les événements ?',
-    answer: 'On regroupe les sources locales (réseaux sociaux, organisateurs, bouche-à-oreille) et on vérifie chaque événement. Les organisateurs peuvent aussi ajouter leurs soirées directement dans l\'app.',
+    answer: 'Les organisateurs créent leurs soirées directement dans l\'app. On vérifie et on centralise tout pour que tu aies un calendrier fiable, à jour et complet.',
   },
   {
-    question: 'Dans quelles villes l\'app est-elle disponible ?',
-    answer: 'Actuellement dans le Sud-Ouest : Pays Basque, Landes, Béarn, Pau et alentours. De nouvelles villes sont ajoutées régulièrement.',
+    question: 'Ma ville est-elle disponible dans l\'application ?',
+    answer: `On couvre le Sud-Ouest : Pays Basque, Landes, Béarn, Pau, Tarbes, Irun et Saint-Sébastien. Ta ville n'y est pas encore ? Contacte-nous à ${CONTACT_EMAIL} — on collabore avec les organisateurs locaux pour l'intégrer.`,
   },
   {
     question: 'Comment ajouter mon événement en tant qu\'organisateur ?',
-    answer: `Télécharge l'app sur Android, crée ton compte et ajoute tes événements directement. C'est gratuit. Pour toute question : ${CONTACT_EMAIL}.`,
+    answer: `Télécharge l'app sur Android ou iOS, crée ton compte et ajoute tes événements directement. C'est gratuit. Pour toute question : ${CONTACT_EMAIL}.`,
   },
   {
     question: 'C\'est payant pour les organisateurs ?',
@@ -38,7 +38,7 @@ export default function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(null)
 
   return (
-    <section id="faq" className="bg-background py-14 md:py-20">
+    <section id="faq" className="bg-surface py-14 md:py-20">
       <div
         ref={ref}
         className={`max-w-2xl mx-auto px-4 transition-all duration-700 ${

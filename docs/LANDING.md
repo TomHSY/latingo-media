@@ -1,10 +1,10 @@
 # Landing Page
 
-Public marketing site for LatinGo. Converts local SBK dancers into app downloads and captures iOS waitlist signups. Lives in `landing/` — separate from the media engine (`src/`).
+Public marketing site for LatinGo. Converts local SBK dancers into app downloads on **Android and iOS**, builds trust with live event data, and recruits organizers. Lives in `landing/` — separate from the media engine (`src/`).
 
 ## Purpose
 
-Single-page funnel: explain the problem, show features, display live event previews, build trust, drive Play Store downloads, collect iOS waitlist signups, recruit organizers. Deployed at **www.latingo.fr**.
+Single-page funnel: explain the problem, show features, prove local coverage, display live event previews, drive Play Store + App Store installs, recruit organizers. Deployed at **www.latingo.fr**.
 
 Brand voice aligns with [strategy/CONTEXT.md](strategy/CONTEXT.md). Instagram carousel CTAs link to app stores or this site.
 
@@ -19,7 +19,39 @@ Brand voice aligns with [strategy/CONTEXT.md](strategy/CONTEXT.md). Instagram ca
 
 `landing/src/App.tsx` composes:
 
-Navbar → Hero → Problem → Features → Screenshots → EventsPreview → LocalProof → Download → IOSWaitlist → Organizers → FAQ → Footer
+```
+Navbar → Hero → Problem → Features → LocalProof → EventsPreview → Screenshots → Organizers → FAQ → Footer
+```
+
+| Component | Anchor | Notes |
+|-----------|--------|-------|
+| `Hero.tsx` | `#telecharger` | Headline, hook, `StoreButtons` |
+| `Problem.tsx` | — | WhatsApp / FB / IG overload |
+| `Features.tsx` | — | Filters, map, Radar |
+| `LocalProof.tsx` | — | Cities, venues, “100+ danseurs”, API stats |
+| `EventsPreview.tsx` | — | Up to 4 cards + store CTAs |
+| `Screenshots.tsx` | — | 5-slide phone carousel |
+| `Organizers.tsx` | `#organisateurs` | Organizer recruitment |
+| `FAQ.tsx` | `#faq` | Accordion |
+| `Footer.tsx` | — | Social, email, store links |
+
+Shared UI: `StoreButtons.tsx` (Play + App Store badges), `SceneBackground.tsx` (section backgrounds).
+
+**Removed (Aug 2026 overhaul):** `Download.tsx`, `IOSWaitlist.tsx`, Formspree iOS waitlist.
+
+**Legacy (unused in `App.tsx`):** `Banner.tsx`, `Showcase.tsx`, `Trust.tsx`, `HowItWorks.tsx` — safe to delete when cleaning up.
+
+## Store links
+
+Defined in `landing/src/constants.ts`:
+
+| Link | URL |
+|------|-----|
+| Google Play | `https://play.google.com/store/apps/details?id=fr.latingo.app` |
+| App Store | `https://apps.apple.com/fr/app/latingo/id6783507682` |
+| Instagram | `https://www.instagram.com/latingo.fr/` |
+| Facebook | `https://www.facebook.com/profile.php?id=61590203503679` |
+| Contact | `contact@latingo.fr` |
 
 ## Dynamic event data
 
@@ -28,6 +60,9 @@ Event stats and preview cards are fetched from `api.latingo.fr` at build time:
 - Script: `landing/scripts/fetch-events.ts`
 - Output: `landing/src/data/events.json` (committed; refreshed on deploy)
 - Fallback: `landing/src/data/events.fallback.json` if fetch fails locally
+- Runtime filter: `landing/src/data/index.ts` picks up to 4 preview events (this week first, then any future)
+
+**Stats window:** next 30 days, non-cancelled events. Venue count deduped by coordinates or city.
 
 **Refresh schedule:**
 
@@ -59,18 +94,9 @@ GitHub Actions workflows:
 
 Both fetch events, build `landing/`, deploy `landing/dist/` to GitHub Pages. Custom domain: `landing/public/CNAME` → `www.latingo.fr`.
 
-## iOS waitlist form
+## Analytics
 
-`IOSWaitlist.tsx` submits to **Formspree** (`formspree.io`) — no backend in this repo. Fields: prénom, email, ville, commentaires (optional).
-
-## External links
-
-| Link | URL |
-|------|-----|
-| Google Play | `https://play.google.com/store/apps/details?id=fr.latingo.app` |
-| Instagram | `https://www.instagram.com/latingo.fr/` |
-| Facebook | `https://www.facebook.com/profile.php?id=61590203503679` |
-| Contact | `contact@latingo.fr` |
+CTA elements expose `data-event` attributes (store badges, navbar, FAQ, organizer contact, social). No analytics script is loaded in `index.html` yet.
 
 ## Design tokens
 
@@ -89,7 +115,7 @@ Similar palette to media engine Noche theme but independently configured.
 
 ## Assets
 
-Images in `landing/public/images/`. App screenshots sourced from repo `pictures/Screenshot_*.jpg`.
+Images in `landing/public/images/`. App screenshots sourced from repo `pictures/Screenshot_*.jpg`. Section backgrounds include `hero-dance.png`, `dance-club-crowd.png`, `dance-social-neon.png`, `dance-coastal-sunset.png`.
 
 ## Relationship to media engine
 
@@ -97,5 +123,9 @@ Images in `landing/public/images/`. App screenshots sourced from repo `pictures/
 |--|----------------------|---------------------|
 | Build | Root `package.json` | `landing/package.json` |
 | Output | PNG files in `output/` | Static HTML in `landing/dist/` |
-| API | Reads api.latingo.fr | Formspree + build-time events fetch |
+| API | Reads api.latingo.fr | Build-time events fetch only |
 | Deploy | Manual / GitHub Actions | GitHub Pages auto |
+
+## Strategy reference
+
+Marketing positioning and copy principles: [../site_context.md](../site_context.md).

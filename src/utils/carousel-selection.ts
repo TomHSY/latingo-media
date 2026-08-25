@@ -1,4 +1,5 @@
 import type { EventDanceType, MediaEvent } from '../types';
+import { getParisDateLabel, parseEventStartDatetime } from './paris-time';
 
 const RSVP_WEIGHT = 1;
 const VIEW_WEIGHT = 0.15;
@@ -108,7 +109,7 @@ function sumDanceDiversityBonus(danceTypes: EventDanceType[], usedDanceSlugs: Se
 }
 
 function getParisDay(isoString: string): string {
-  return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(isoString));
+  return getParisDateLabel(parseEventStartDatetime(isoString));
 }
 
 function scoreCandidate(

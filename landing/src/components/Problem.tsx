@@ -5,16 +5,16 @@ export default function Problem() {
 
   const painPoints = [
     {
-      emoji: '📱',
-      text: 'Les événements sont éparpillés entre Facebook, Instagram et le bouche-à-oreille.',
+      emoji: '💬',
+      text: 'Tu scrolles 4 groupes WhatsApp, 2 pages Facebook et les stories Instagram — et tu rates quand même une soirée.',
     },
     {
       emoji: '📸',
-      text: 'Tu découvres une soirée le lendemain sur les stories de quelqu\'un.',
+      text: 'Tu découvres une soirée géniale… le lendemain matin, sur les stories de quelqu\'un.',
     },
     {
-      emoji: '💬',
-      text: 'Tu ne sais jamais ce qui se passe ce week-end sans demander dans 4 groupes WhatsApp.',
+      emoji: '📱',
+      text: 'Chaque week-end, la même question : « Il y a quoi ce soir ? » — sans réponse claire.',
     },
   ]
 

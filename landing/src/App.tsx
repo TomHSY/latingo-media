@@ -2,11 +2,9 @@ import Navbar from './components/Navbar'
 import Hero from './components/Hero'
 import Problem from './components/Problem'
 import Features from './components/Features'
-import Screenshots from './components/Screenshots'
-import EventsPreview from './components/EventsPreview'
 import LocalProof from './components/LocalProof'
-import Download from './components/Download'
-import IOSWaitlist from './components/IOSWaitlist'
+import EventsPreview from './components/EventsPreview'
+import Screenshots from './components/Screenshots'
 import Organizers from './components/Organizers'
 import FAQ from './components/FAQ'
 import Footer from './components/Footer'
@@ -18,11 +16,9 @@ export default function App() {
       <Hero />
       <Problem />
       <Features />
-      <Screenshots />
-      <EventsPreview />
       <LocalProof />
-      <Download />
-      <IOSWaitlist />
+      <EventsPreview />
+      <Screenshots />
       <Organizers />
       <FAQ />
       <Footer />

@@ -3,14 +3,14 @@ import SceneBackground from './SceneBackground'
 
 const features = [
   {
-    icon: '🗺️',
-    title: 'Tout sur une carte',
-    description: 'Soirées, stages, festivals — géolocalisés autour de toi.',
+    icon: '🎵',
+    title: 'Applique tes filtres',
+    description: 'Salsa, bachata, kizomba — et d\'autres styles.',
   },
   {
-    icon: '🎵',
-    title: 'Filtre par style',
-    description: 'Salsa, Bachata, Kizomba — ou les trois.',
+    icon: '🗺️',
+    title: 'Explore la carte',
+    description: 'Événements géolocalisés autour de toi.',
   },
   {
     icon: '🔔',
@@ -37,7 +37,7 @@ export default function Features() {
         }`}
       >
         <h2 className="text-2xl md:text-3xl font-bold mb-8 text-center">
-          Une seule app. Toutes les soirées.
+          Une seule app. Toutes les soirées locales.
         </h2>
 
         <div className="space-y-5">

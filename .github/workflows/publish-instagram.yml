@@ -31,6 +31,8 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    env:
+      TZ: Europe/Paris
     steps:
       - uses: actions/checkout@v4
 

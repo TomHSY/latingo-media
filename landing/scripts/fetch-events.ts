@@ -37,16 +37,14 @@ function loadEnvFromRepoRoot() {
       if (!process.env[key]) process.env[key] = value
     }
   } catch {
-    // .env optional — CI uses secrets
+    // .env optional
   }
 }
 
-async function getToken(): Promise<string> {
+async function getToken(): Promise<string | null> {
   const email = process.env.ADMIN_EMAIL
   const password = process.env.ADMIN_PASSWORD
-  if (!email || !password) {
-    throw new Error('Missing ADMIN_EMAIL or ADMIN_PASSWORD')
-  }
+  if (!email || !password) return null
 
   const res = await fetch(`${API_BASE}/auth/login`, {
     method: 'POST',
@@ -62,16 +60,18 @@ async function getToken(): Promise<string> {
   return data.access_token
 }
 
-async function fetchEvents(token: string, dateFrom: string, dateTo: string): Promise<ApiEvent[]> {
+async function fetchEvents(dateFrom: string, dateTo: string): Promise<ApiEvent[]> {
   const params = new URLSearchParams({
     date_from: dateFrom,
     date_to: dateTo,
     sort_by: 'date_asc',
   })
 
-  const res = await fetch(`${API_BASE}/events?${params}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  })
+  const token = await getToken()
+  const headers: Record<string, string> = {}
+  if (token) headers.Authorization = `Bearer ${token}`
+
+  const res = await fetch(`${API_BASE}/events?${params}`, { headers })
 
   if (!res.ok) {
     throw new Error(`API error: ${res.status} ${await res.text()}`)
@@ -89,8 +89,16 @@ function venueKey(event: ApiEvent): string {
 }
 
 function pickPreviewEvents(events: ApiEvent[], limit = 4): ApiEvent[] {
-  const withImages = events.filter((e) => e.image_url)
-  const withoutImages = events.filter((e) => !e.image_url)
+  const now = Date.now()
+  const weekMs = 7 * 86400000
+  const future = events.filter((e) => new Date(e.start_datetime).getTime() >= now)
+  const thisWeek = future.filter((e) => {
+    const start = new Date(e.start_datetime).getTime()
+    return start <= now + weekMs
+  })
+  const pool = thisWeek.length > 0 ? thisWeek : future
+  const withImages = pool.filter((e) => e.image_url)
+  const withoutImages = pool.filter((e) => !e.image_url)
   return [...withImages, ...withoutImages].slice(0, limit)
 }
 
@@ -101,16 +109,18 @@ async function main() {
   const dateFrom = now.toISOString()
   const dateTo = new Date(now.getTime() + 30 * 86400000).toISOString()
 
-  const token = await getToken()
-  const allEvents = await fetchEvents(token, dateFrom, dateTo)
+  const allEvents = await fetchEvents(dateFrom, dateTo)
   const activeEvents = allEvents.filter((e) => e.status !== 'cancelled')
+  const futureEvents = activeEvents.filter(
+    (e) => new Date(e.start_datetime).getTime() >= Date.now(),
+  )
 
-  const venues = new Set(activeEvents.map(venueKey))
-  const upcoming = pickPreviewEvents(activeEvents)
+  const venues = new Set(futureEvents.map(venueKey))
+  const upcoming = pickPreviewEvents(futureEvents)
 
   const payload = {
     stats: {
-      totalEvents: activeEvents.length,
+      totalEvents: futureEvents.length,
       totalVenues: venues.size,
     },
     upcoming: upcoming.map((event) => ({
@@ -139,7 +149,7 @@ main().catch((err) => {
     console.warn('Using existing events.json')
     process.exit(0)
   } catch {
-    console.error('No events.json available — run fetch with ADMIN_EMAIL/ADMIN_PASSWORD')
+    console.error('No events.json available')
     process.exit(1)
   }
 })

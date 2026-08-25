@@ -1,6 +1,6 @@
 # LatinGo Media Engine — Agent Instructions
 
-Generates Instagram/social PNG assets from LatinGo event data. Separate repo from the main `latingo-app` monorepo. Also contains the Early Access landing page under `landing/`.
+Generates Instagram/social PNG assets from LatinGo event data. Separate repo from the main `latingo-app` monorepo. Also contains the marketing landing page under `landing/` (Play + App Store funnel at www.latingo.fr).
 
 ## Stack
 
