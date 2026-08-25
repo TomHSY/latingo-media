@@ -5,7 +5,7 @@ export default function Hero() {
   const { ref, inView } = useInView(0.1)
 
   return (
-    <section id="telecharger" className="relative min-h-screen md:min-h-[88vh] flex items-center justify-center">
+    <section className="relative min-h-screen md:min-h-[88vh] flex items-center justify-center">
       <img
         src="/images/hero-dance.png"
         alt="Ambiance soirée danse latine"
