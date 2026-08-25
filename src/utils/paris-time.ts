@@ -173,6 +173,48 @@ export function getParisWeekendBounds(reference = new Date()): { from: string; t
   return { from: from.toISOString(), to: to };
 }
 
+/** Thursday 00:00 → Sunday 23:59:59.999 Europe/Paris as UTC ISO strings */
+export function getParisThuSunBounds(reference = new Date()): {
+  from: string;
+  to: string;
+  thursdayLabel: string;
+  sundayLabel: string;
+} {
+  const todayLabel = getParisDateLabel(reference);
+  const day = getParisWeekdayIndex(reference);
+
+  let thursdayLabel: string;
+  if (day >= 4 && day <= 6) {
+    thursdayLabel = addParisCalendarDays(todayLabel, 4 - day);
+  } else {
+    const daysUntilThu = day === 0 ? 4 : 4 - day;
+    thursdayLabel = addParisCalendarDays(todayLabel, daysUntilThu);
+  }
+
+  const sundayLabel = addParisCalendarDays(thursdayLabel, 3);
+  const [ty, tm, td] = thursdayLabel.split('-').map(Number);
+  const [sy, sm, sd] = sundayLabel.split('-').map(Number);
+
+  const from = findUtcForParisLocal(ty, tm, td, 0, 0, 0);
+  const sundayNoon = findUtcForParisLocal(sy, sm, sd, 12, 0, 0);
+  const { to } = getParisDayBounds(sundayNoon);
+
+  return { from: from.toISOString(), to: to, thursdayLabel, sundayLabel };
+}
+
+/** ISO week label (YYYY-Www) from Paris calendar date */
+export function getParisIsoWeekLabel(reference = new Date()): string {
+  const label = getParisDateLabel(reference);
+  const [y, m, d] = label.split('-').map(Number);
+  const noon = findUtcForParisLocal(y, m, d, 12, 0, 0);
+  const utc = new Date(noon);
+  const dayNum = utc.getUTCDay() || 7;
+  utc.setUTCDate(utc.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(utc.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil(((utc.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  return `${utc.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+}
+
 export interface ParisCalendarWeekCover {
   startDay: number;
   endDay: number;

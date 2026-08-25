@@ -158,6 +158,27 @@ async function publishContainer(containerId: string): Promise<string> {
 }
 
 /**
+ * Publish a single feed image to Instagram.
+ * Returns the published media ID.
+ */
+export async function publishFeedImage(imageUrl: string, caption: string): Promise<string> {
+  console.log('  Creating feed image container...');
+  const data = await withRetries('feed image container', () =>
+    apiPost(`/${USER_ID}/media`, {
+      image_url: imageUrl,
+    })
+  );
+  const containerId = data.id as string;
+  console.log(`  ✓ Feed container: ${containerId}`);
+
+  console.log('  Publishing feed image...');
+  const mediaId = await publishContainer(containerId);
+  console.log(`  ✓ Published! Media ID: ${mediaId}`);
+
+  return mediaId;
+}
+
+/**
  * Publish a carousel post to Instagram.
  * Returns the published media ID.
  */

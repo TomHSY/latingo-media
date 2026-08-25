@@ -4,7 +4,8 @@ on:
   schedule:
     # :15 past the hour avoids GitHub peak load at :00; scripts guard on Europe/Paris
     # 09:15 UTC ≈ 11:15 Paris (CEST), 10:15 ≈ 12:15, 12:15 ≈ 14:15, 13:15 ≈ 14:15 CET winter
-    - cron: '15 9,10,11,12,13 * * *'
+    # 17:15–19:15 UTC ≈ 19:15–21:15 Paris (CEST) / 18:15–20:15 (CET) — Wed Thu preview
+    - cron: '15 9,10,11,12,13,17,18,19 * * *'
   workflow_dispatch:
     inputs:
       job:
@@ -14,6 +15,9 @@ on:
         options:
           - carousel
           - stories
+          - thursday-preview
+          - thursday
+          - thursday-gallery
       event_id:
         description: Optional event UUID — republish one story only (with job=stories)
         required: false
@@ -82,3 +86,50 @@ jobs:
           FORCE_PUBLISH: ${{ github.event.inputs.job == 'stories' && 'stories' || '' }}
           STORY_EVENT_ID: ${{ github.event.inputs.event_id }}
         run: npm run publish:stories-if-scheduled
+
+      - name: Thursday preview (scheduled Wed evening or manual)
+        if: github.event_name == 'schedule' || github.event.inputs.job == 'thursday-preview'
+        env:
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
+          DRY_RUN: 'true'
+          FORCE_PUBLISH: ${{ github.event.inputs.job == 'thursday-preview' && 'thursday-preview' || '' }}
+        run: npm run render:thursday-preview-if-scheduled
+
+      - name: Thursday publish (manual only — founder approved)
+        if: github.event.inputs.job == 'thursday'
+        env:
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          INSTAGRAM_USER_ID: ${{ secrets.INSTAGRAM_USER_ID }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
+          DRY_RUN: ${{ secrets.DRY_RUN }}
+          FORCE_PUBLISH: thursday
+        run: npm run publish:thursday-if-scheduled
+
+      - name: Thursday gallery (all variants, dry-run artifact)
+        if: github.event.inputs.job == 'thursday-gallery'
+        env:
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          DRY_RUN: 'true'
+          THURSDAY_LOCAL_ONLY: 'true'
+        run: npm run render:thursday-gallery
+
+      - name: Upload Thursday gallery artifact
+        if: github.event.inputs.job == 'thursday-gallery'
+        uses: actions/upload-artifact@v4
+        with:
+          name: thursday-gallery-${{ github.run_id }}
+          path: output/thursday-gallery/
+          retention-days: 14

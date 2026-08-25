@@ -53,14 +53,60 @@ Instagram is NOT the product. The app is. Instagram serves as:
 5. **Carousels exclude cancelled events** — filter before selection (see [API.md](../API.md))
 6. **Stories inform about cancellations** — cancelled events appear with "ANNULÉE" mark
 
-## Content calendar
+## Content calendar (Instagram)
 
-All times **Europe/Paris**. Automated publish — see [DEPLOYMENT.md](../DEPLOYMENT.md).
+All times **Europe/Paris**. Locked Aug 2026 — see [DECISIONS.md](DECISIONS.md).
 
-| Schedule | Format | Content |
-|----------|--------|---------|
-| Tuesday 14:00 | Carousel (4:5) | "Où danser ce week-end?" — 4 selected events |
-| Daily 12:00 | Story (×N) | One story per event happening that day |
+**Principle:** Instagram is a teaser/billboard (~3 feed posts/week + daily stories). The app is where dancers find the full agenda. Empty feed days are intentional. Do not run a daily “new event added” stream on IG (that belongs in-app).
+
+### Always-on (automated)
+
+| Schedule | Format | Content | Status |
+|----------|--------|---------|--------|
+| Daily 12:00 | Story (×N) | One CE SOIR story per event that day (0 if none) | Automated — [DEPLOYMENT.md](../DEPLOYMENT.md) |
+| As needed | Story | ANNULÉE when that day has cancelled events | Spec’d; optional with daily batch |
+
+### Feed (~3 posts/week)
+
+| Day | Format | Content | Who |
+|-----|--------|---------|-----|
+| **Mon** | — | No feed post | — |
+| **Tue 14:00** | Carousel (4:5) | "Où danser ce week-end?" — 4 of N | Automated |
+| **Wed** | Feed / Reel | App functionality, guide, or demo **or** founder thoughts (rotate; skip if thin) | Manual |
+| **Thu** | Feed (lens) | Dance / area / stats rotation — see below | Engine renders Wed; **founder approves Thu before publish** |
+| **Fri–Sun** | — | No fixed feed post; stories carry the weekend | Optional one-off Reel only if strong IRL/product clip |
+
+### Thursday lens rotation
+
+Repeat this 8-week cycle (one lens per Thursday):
+
+1. Dance type spotlight  
+2. Area focus  
+3. Dance type spotlight  
+4. Weekly stats  
+5. Area focus  
+6. Dance type spotlight  
+7. Area focus  
+8. Weekly stats  
+→ then back to dance…
+
+`dance → area → dance → stats → area → dance → area → stats → …`
+
+**Event window:** Thu–Sun only (Europe/Paris), not the full ISO week. Hard-exclude Tuesday carousel event IDs.
+
+**Areas (not cities):** BAB · Landes · Béarn · Euskadi — see [THURSDAY-LENS.md](THURSDAY-LENS.md).
+
+**Slot variants** (when data supports them):
+
+| Slot type | Default | Variant |
+|-----------|---------|---------|
+| Dance | Salsa / Bachata / Kizomba spotlight | **Autres danses** (Zouk, Semba, WCS, Tango bundled) |
+| Area | Area focus post | **Cross-border** FR vs ES |
+| Stats | Weekly numbers | **Salsa vs Bachata duel** |
+
+**Pre-publish review (required):** Wednesday ~20:00 Paris — engine renders preview PNGs to R2 (`DRY_RUN=true`). Founder reviews URLs in GitHub Actions summary. Thursday — founder triggers manual publish via Actions (`job=thursday`). **No autonomous Thursday publish.**
+
+**Scarcity:** do not reuse the same events on Tuesday’s carousel and Thursday’s lens the same week. Seasonal / thematic posts replace a feed slot when the calendar warrants (rentrée, festivals) — they are not a fixed Monday.
 
 ## Instagram account setup
 

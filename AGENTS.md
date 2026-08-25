@@ -24,6 +24,9 @@ npx playwright install chromium
 | `npm run publish:stories-today` | One story per event today (Europe/Paris) |
 | `npm run publish:carousel-if-scheduled` | Tue 14:00 Paris → carousel only (GitHub Actions) |
 | `npm run publish:stories-if-scheduled` | Daily 12:00 Paris → stories (GitHub Actions) |
+| `npm run render:thursday-preview` | Thursday lens preview (local, DRY_RUN) |
+| `npm run render:thursday-gallery` | All 6 Thursday variants for template inspection |
+| `npm run publish:thursday-if-approved` | Publish Thursday lens after founder review |
 | `npm run render:test` | Mock-data render |
 | `npm run test:api` | API diagnostic |
 | `npm run preview` | Preview server at localhost:3456 |
@@ -51,7 +54,7 @@ Deployed to GitHub Pages at `www.latingo.fr` on push to `main`.
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Render pipeline, project layout |
 | [docs/CONVENTIONS.md](docs/CONVENTIONS.md) | Noche tokens, component patterns |
 | [docs/LANDING.md](docs/LANDING.md) | Marketing site subproject |
-| [docs/strategy/](docs/strategy/) | Brand voice, decisions, roadmap |
+| [docs/strategy/](docs/strategy/) | Brand voice, decisions, roadmap, [THURSDAY-LENS.md](docs/strategy/THURSDAY-LENS.md) |
 
 ## Scope rules
 

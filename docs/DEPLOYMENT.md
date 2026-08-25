@@ -1,6 +1,6 @@
 # Deployment — Instagram automation
 
-Automated publishing: **weekly carousel** (Tuesday 14:00 Europe/Paris) and **daily stories** (every day 12:00 Europe/Paris, one story per event that day).
+Automated publishing: **weekly carousel** (Tuesday 14:00 Europe/Paris) and **daily stories** (every day 12:00 Europe/Paris, one story per event that day). Full Instagram editorial calendar (Wed app/founder, Thu lens rotation, empty Mon/Fri–Sun) lives in [strategy/CONTEXT.md](strategy/CONTEXT.md).
 
 Orchestration: [GitHub Actions](../.github/workflows/publish-instagram.yml) with Europe/Paris timezone guards.
 
@@ -14,11 +14,16 @@ See also [PRD.md](PRD.md) content calendar and [ARCHITECTURE.md](ARCHITECTURE.md
 
 Cover slide always shows **Monday–Sunday** of the current Paris calendar week (e.g. `22–28 JUIN`), even though event slides are picked from the weekend only.
 | **stories** | Daily 12:00 Paris | All events on **that calendar day** in Paris | 1 story per event (0 if none) |
+| **thursday-preview** | Wednesday ~20:00 Paris | Thursday lens render only | 0 Instagram posts — R2 preview URLs in Actions log |
+| **thursday** | Manual only (`workflow_dispatch`) | Thursday lens feed post | 1 feed post (carousel or single image) — **founder must trigger after review** |
+| **thursday-gallery** | Manual only (`workflow_dispatch`) | All 6 Thursday variants (dry-run) | 0 Instagram posts — artifact ZIP for inspection |
 
 Important distinctions:
 
 - **Carousel** = “Où danser ce week-end?” — top 4 events from the **upcoming Fri–Sun** window (`fetchWeekendEvents`, Paris bounds).
 - **Stories** = **today only**, not the whole week. Tuesday stories cover Tuesday events, not Friday/Saturday parties.
+- **Thursday preview** = Thu–Sun lens render only (`DRY_RUN=true`). Founder reviews R2 URLs before publish.
+- **Thursday publish** = manual `workflow_dispatch` only — never scheduled with auto-publish.
 - Scheduled carousel runs with `CAROUSEL_ONLY=true` (no extra preview stories bundled with the carousel job).
 
 All date logic uses **Europe/Paris** in CI and locally ([`src/utils/paris-time.ts`](../src/utils/paris-time.ts), [`src/utils/dates.ts`](../src/utils/dates.ts)).
@@ -135,6 +140,10 @@ Open printed R2 URLs in a browser before going live.
 | `publish:stories-today` | One story per event today (Europe/Paris) |
 | `publish:carousel-if-scheduled` | Tue 14:00 Paris → carousel only |
 | `publish:stories-if-scheduled` | Daily 12:00 Paris → stories |
+| `render:thursday-preview` | Render Thursday lens PNGs (local / CI preview) |
+| `render:thursday-gallery` | Render all 6 Thursday variants + manifest (inspection) |
+| `render:thursday-preview-if-scheduled` | Wed ~20:00 Paris → preview render only |
+| `publish:thursday-if-approved` | Publish Thursday lens after founder review |
 | `test:stories-today` | API-only audit of today's story event selection (no render) |
 
 ## GitHub Actions schedule
@@ -152,10 +161,62 @@ Workflow runs at **10:00, 11:00, 12:00, 13:00 UTC** daily. Scripts check **Europ
 |-----|------------|-------|
 | Carousel | Tuesday 14:00 | `shouldRunCarousel()` |
 | Stories | Daily 12:00 | `shouldRunStories()` |
+| Thursday preview | Wednesday ~20:00 | `shouldRunThursdayPreview()` |
 
 Extra cron fires exit 0 with a skip message when Paris hour does not match — this is expected.
 
-Manual trigger: **Actions → Publish Instagram → Run workflow** with job `carousel` or `stories`.
+Manual trigger: **Actions → Publish Instagram → Run workflow** with job `carousel`, `stories`, `thursday-preview`, `thursday`, or `thursday-gallery`.
+
+## Thursday lens (preview + manual publish)
+
+Thursday feed posts are **never auto-published**. The founder must review rendered templates before any publish.
+
+| Step | When | Command / workflow | Instagram |
+|------|------|-------------------|-----------|
+| 1. Preview render | Wed ~20:00 Paris (scheduled) | `render:thursday-preview-if-scheduled` with `DRY_RUN=true` | None — PNGs uploaded to R2 |
+| 2. Founder review | Wed evening / Thu morning | Open R2 URLs printed in GitHub Actions summary | — |
+| 3. Publish | Thu (manual) | Actions → Publish Instagram → `job=thursday` | 1 feed post |
+
+**Rules:**
+
+- Scheduled cron for Thursday **only renders preview** — always `DRY_RUN=true`, no Instagram API call.
+- **Publish requires manual `workflow_dispatch`** with `job=thursday`. No secret flip, no silent auto-publish.
+- Re-validate locally when template code changes: `npm run render:thursday-preview`
+- Full editorial spec: [strategy/THURSDAY-LENS.md](strategy/THURSDAY-LENS.md)
+
+```bash
+# Local preview (no Instagram)
+DRY_RUN=true npm run render:thursday-preview
+
+# Publish after founder review (local)
+DRY_RUN=false npm run publish:thursday-if-approved
+
+# Same entry points as GitHub Actions
+FORCE_PUBLISH=thursday-preview DRY_RUN=true npm run render:thursday-preview-if-scheduled
+FORCE_PUBLISH=thursday DRY_RUN=false npm run publish:thursday-if-approved
+```
+
+**Contrast:** Tuesday carousel and daily stories may run fully autonomous once validated. Thursday always keeps human approval until explicitly changed in [DECISIONS.md](strategy/DECISIONS.md).
+
+## Thursday gallery (all variants — dry-run artifact)
+
+Renders **all 6 template variants** from live API data for founder inspection. No Instagram, no R2.
+
+| Step | Action |
+|------|--------|
+| 1. Trigger | **Actions → Publish Instagram → Run workflow** → job **`thursday-gallery`** |
+| 2. Wait | Workflow renders PNGs for dance-spotlight, autres-danses, area-focus, cross-border, weekly-stats, dance-duel |
+| 3. Download | Run page → **Artifacts** → `thursday-gallery-{run_id}` (ZIP, 14-day retention) |
+| 4. Inspect | Open variant folders + `manifest.json` / `SUMMARY.md` for captions and thin-data warnings |
+
+```bash
+# Local equivalent (live API, no upload)
+$env:DRY_RUN="true"; $env:THURSDAY_LOCAL_ONLY="true"
+npm run render:thursday-gallery
+# → output/thursday-gallery/
+```
+
+Gallery is **manual-only** — never scheduled.
 
 ## CI / Linux notes
 

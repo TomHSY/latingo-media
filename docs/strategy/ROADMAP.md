@@ -37,15 +37,23 @@ GTM and marketing strategy source of truth: **latingo-app** `docs/strategy/` (CO
 
 Cron → API query → render → deliver PNGs to admin/founder. **Note:** GitHub Actions already covers publish cron; n8n is optional if founder wants a visual workflow.
 
-## Phase 4 — More templates
+## Phase 4 — Thursday lens templates
 
-- Dance type spotlight ("3 soirées Bachata ce week-end") — Template 3
-- City focus ("Que faire à Bayonne ce week-end?") — Template 4
-- **Cross-border — "L'autre côté de la frontière"** — weekend count FR vs ES side; differentiator no local WhatsApp group has
-- **Rentrée / seasonal** — September season restart, festivals, vacances — extends Template 8
-- New event alert story — Template 6
-- Weekly stats (optional) — Template 7
+Aligned with Instagram calendar ([CONTEXT.md](CONTEXT.md)): Thursday lens cycle `dance → area → dance → stats → …`. Full spec: [THURSDAY-LENS.md](THURSDAY-LENS.md).
+
+- [x] **Docs** — DECISIONS, CONTEXT, PRD, DEPLOYMENT, THURSDAY-LENS.md
+- [x] **`src/config/areas.ts`** — city → BAB / Landes / Béarn / Euskadi
+- [x] **`src/utils/thursday-selector.ts`** — Thu–Sun window, SBK tiers, variants, ledger, Tue overlap
+- [x] Template 3 — Dance spotlight + **autres danses** bundle variant
+- [x] Template 4 — **Area focus** (four areas, replaces city-focus)
+- [x] Template 7 — Weekly stats + **Salsa vs Bachata duel** variant
+- [x] Template 9 — Cross-border as **area-slot variant**
+- [x] **Review workflow** — Wed preview render (DRY_RUN) + manual `workflow_dispatch` publish Thu
+- **Rentrée / seasonal** — Template 8; replaces a feed slot when warranted (manual)
+- New event alert — Template 6 — **not** a daily IG habit; rare teaser only
 - Map digest — Template 5 (future)
+
+**Autonomous publish:** Tue carousel + daily CE SOIR stories only. **Thursday always requires founder template review before publish.**
 
 ## Phase 5 — Meta publishing (enable + extend)
 

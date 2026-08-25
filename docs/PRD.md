@@ -20,16 +20,19 @@ Instagram is a **teaser**, not the product. See [strategy/CONTEXT.md](strategy/C
 
 ## Content calendar
 
-All times **Europe/Paris**.
+All times **Europe/Paris**. Full editorial rules: [strategy/CONTEXT.md](strategy/CONTEXT.md). Locked decision: [strategy/DECISIONS.md](strategy/DECISIONS.md).
 
 | Schedule | Format | Content |
 |----------|--------|---------|
+| Daily 12:00 | Story (×N) | CE SOIR — one story per event that day; ANNULÉE when relevant |
 | Tuesday 14:00 | Carousel (4:5) | "Où danser ce week-end?" — 4 selected events |
-| Daily 12:00 | Story (×N) | One story per event happening that day |
+| Wednesday | Feed / Reel | App guide/demo **or** founder thoughts (manual; skip if thin) |
+| Thursday | Feed (lens) | Dance → area → dance → stats → … — engine renders Wed; **founder approves before publish** |
+| Mon, Fri–Sun | — | No fixed feed post |
 
-Weekly carousel selection prioritizes spicy picks with dance diversity and city freshness. Likely recurring events are down-ranked (not hard-excluded) until recurring metadata is exposed by the API.
+Weekly carousel selection prioritizes spicy picks with dance diversity and city freshness. Likely recurring events are down-ranked (not hard-excluded) until recurring metadata is exposed by the API. Do not reuse Tuesday carousel events on the same week’s Thursday lens.
 
-Automated via GitHub Actions — see [DEPLOYMENT.md](DEPLOYMENT.md).
+Automated today via GitHub Actions: daily stories + Tue carousel — see [DEPLOYMENT.md](DEPLOYMENT.md). Wed feed is manual. Thu lens: preview automated Wed; **publish requires founder review** — see [strategy/THURSDAY-LENS.md](strategy/THURSDAY-LENS.md).
 
 ## Templates
 
@@ -49,17 +52,21 @@ When `status === 'cancelled'`: "ANNULÉE" badge, dimmed backdrop, optional `canc
 
 Implementation: `src/templates/ce-soir/EventStory`
 
-### Templates 3–8 — PLANNED
+### Templates 3–9 — Phase 4 (Thursday lens)
 
 | # | Name | Description |
 |---|------|-------------|
-| 3 | Dance type spotlight | "3 soirées Bachata ce week-end" |
-| 4 | City focus | "Que faire à Bayonne ce week-end?" |
+| 3 | Dance type spotlight | "3 soirées Bachata ce week-end" — SBK tier prioritization; **autres danses** variant when rare dances ≥ 3 combined |
+| 4 | Area focus | "Que faire en BAB ce week-end?" — four areas: BAB, Landes, Béarn, Euskadi (not single city) |
 | 5 | Map digest | Pins on map — future |
-| 6 | New event alert | "Nouvelle soirée ajoutée 🆕" |
-| 7 | Weekly stats | "Cette semaine sur LatinGo" — optional |
+| 6 | New event alert | "Nouvelle soirée ajoutée 🆕" — rare IG teaser only |
+| 7 | Weekly stats | "Cette semaine sur LatinGo" — **Salsa vs Bachata duel** variant when both ≥ 5 |
 | 8 | Seasonal/thematic | Manual trigger (été, festivals, **rentrée** September restart) |
-| 9 | Cross-border | **"L'autre côté de la frontière"** — FR vs ES weekend event counts; wedge differentiator |
+| 9 | Cross-border | **"L'autre côté de la frontière"** — FR vs ES counts; **area-slot variant** (not extra day) |
+
+**Thursday window:** Thu–Sun events only. Exclude Tue carousel IDs. Show 3 events + closing "+X autres". Full spec: [strategy/THURSDAY-LENS.md](strategy/THURSDAY-LENS.md).
+
+Implementation: `src/templates/dance-spotlight/`, `area-focus/`, `weekly-stats/`, `cross-border/`
 
 ### Pending / gaps (not templates)
 

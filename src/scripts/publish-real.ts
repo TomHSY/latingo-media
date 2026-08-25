@@ -14,6 +14,7 @@ import { uploadImages, listR2Keys } from '../publisher/upload';
 import { publishCarousel, publishStory } from '../publisher/instagram';
 import { publishFacebookAlbum } from '../publisher/facebook';
 import { generateCarouselCaption } from '../publisher/caption';
+import { loadThursdayState, saveThursdayState } from '../utils/thursday-state';
 import { getParisCalendarWeekCover, getParisDateLabel, parseEventStartDatetime } from '../utils/paris-time';
 import { selectSpicyEvents } from '../utils';
 
@@ -190,6 +191,13 @@ async function main() {
   }
 
   console.log(`\n  ✓ Instagram done — Carousel: ${carouselMediaId}`);
+
+  const thursdayState = loadThursdayState();
+  saveThursdayState({
+    ...thursdayState,
+    lastTuesdayCarouselEventIds: selected.map((e) => e.id),
+  });
+  console.log('  ✓ Updated Thursday ledger with Tuesday carousel event IDs');
 
   // ── STEP 5: Publish to Facebook ───────────────────────────────────
   if (process.env.FB_PAGE_ACCESS_TOKEN && process.env.FB_PAGE_ID) {

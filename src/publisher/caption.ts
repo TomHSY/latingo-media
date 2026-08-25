@@ -3,6 +3,7 @@
  */
 import OpenAI from 'openai';
 import type { MediaEvent } from '../types';
+import type { ThursdaySelection } from '../utils/thursday-selector';
 import { formatDateFrench } from '../utils/dates';
 import { parseEventStartDatetime } from '../utils/paris-time';
 import 'dotenv/config';
@@ -64,4 +65,47 @@ export async function generateCarouselCaption(
   });
 
   return response.choices[0].message.content?.trim() ?? '';
+}
+
+/** Deterministic Instagram caption for Thursday lens posts. */
+export function buildThursdayCaption(selection: ThursdaySelection): string {
+  const { meta, events, variant } = selection;
+  const lines: string[] = [meta.headline];
+
+  if (meta.subheadline) {
+    lines.push(meta.subheadline);
+  }
+
+  if (variant === 'dance-duel' && meta.salsaCount != null && meta.bachataCount != null) {
+    lines.push(`${meta.salsaCount} soirées Salsa · ${meta.bachataCount} soirées Bachata`);
+  }
+
+  if (variant === 'cross-border' && meta.frenchCount != null && meta.euskadiCount != null) {
+    lines.push(`${meta.frenchCount} côté français · ${meta.euskadiCount} en Euskadi`);
+  }
+
+  if (variant === 'weekly-stats' && meta.stats) {
+    lines.push(
+      `${meta.stats.totalEvents} soirées · ${meta.stats.activeAreas} zones · ${meta.stats.danceStyles} styles`
+    );
+  }
+
+  if (events.length > 0) {
+    lines.push('');
+    for (const event of events) {
+      const dances = event.dance_types.map((d) => d.label_fr).join(', ');
+      lines.push(`• ${event.title} · ${event.city ?? ''} · ${dances}`);
+    }
+    if (meta.remaining > 0) {
+      lines.push(`…et ${meta.remaining} autre${meta.remaining > 1 ? 's' : ''} sur l'app`);
+    }
+  }
+
+  lines.push('');
+  lines.push('👉 Découvre toutes les soirées sur LatinGo');
+  lines.push('🔗 Lien en bio');
+  lines.push('');
+  lines.push('#latingo #danselatine #sbk #paysbasque #salsa #bachata #kizomba');
+
+  return lines.join('\n');
 }

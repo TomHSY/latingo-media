@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import type { MediaEvent } from '../types';
-import { getParisWeekendBounds } from '../utils/paris-time';
+import { getParisWeekendBounds, getParisThuSunBounds } from '../utils/paris-time';
 
 const API_BASE = 'https://api.latingo.fr';
 
@@ -74,6 +74,19 @@ export async function fetchEvents(params: {
  */
 export async function fetchWeekendEvents(): Promise<MediaEvent[]> {
   const { from, to } = getParisWeekendBounds();
+
+  return fetchEvents({
+    date_from: from,
+    date_to: to,
+    sort_by: 'date_asc',
+  });
+}
+
+/**
+ * Fetch Thu–Sun events for the Thursday lens window (Europe/Paris).
+ */
+export async function fetchThursdayWindowEvents(reference = new Date()): Promise<MediaEvent[]> {
+  const { from, to } = getParisThuSunBounds(reference);
 
   return fetchEvents({
     date_from: from,
