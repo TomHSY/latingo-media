@@ -8,7 +8,18 @@ import { formatDateFrench } from '../utils/dates';
 import { parseEventStartDatetime } from '../utils/paris-time';
 import 'dotenv/config';
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+let openaiClient: OpenAI | null = null;
+
+function getOpenAIClient(): OpenAI {
+  if (!openaiClient) {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      throw new Error('OPENAI_API_KEY is required for carousel caption generation');
+    }
+    openaiClient = new OpenAI({ apiKey });
+  }
+  return openaiClient;
+}
 
 export async function generateCarouselCaption(
   events: MediaEvent[],
@@ -35,7 +46,7 @@ export async function generateCarouselCaption(
     })
     .join('\n');
 
-  const response = await client.chat.completions.create({
+  const response = await getOpenAIClient().chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [
       {
