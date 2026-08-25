@@ -100,3 +100,16 @@ export function getAreaForEvent(event: { city?: string | null }): AreaSlug | nul
 export function getAreaDefinition(slug: AreaSlug): AreaDefinition {
   return AREAS[slug];
 }
+
+/** Instagram cover lines for Thursday area-focus (readable place names). */
+export const AREA_FOCUS_HEADLINES: Record<AreaSlug, string> = {
+  bab: 'Où danser au Pays Basque ce week-end ?',
+  landes: 'Où danser dans les Landes ce week-end ?',
+  bearn: 'Où danser autour de Pau ce week-end ?',
+  euskadi: 'Où danser en Espagne ce week-end ?',
+};
+
+export function buildAreaFocusHeadline(slug: AreaSlug): string {
+  return AREA_FOCUS_HEADLINES[slug];
+}
+

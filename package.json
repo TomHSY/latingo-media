@@ -17,6 +17,8 @@
     "render:thursday-preview": "node scripts/run-tsx.mjs src/scripts/render-thursday-preview.ts",
     "render:thursday-preview-mock": "node scripts/run-tsx.mjs src/scripts/render-thursday-preview-mock.ts",
     "render:thursday-gallery": "node scripts/run-tsx.mjs src/scripts/render-thursday-gallery.ts",
+    "render:thursday-concepts": "node scripts/run-tsx.mjs src/scripts/render-thursday-concepts.ts",
+    "render:thursday-concepts-v2": "node scripts/run-tsx.mjs src/scripts/render-thursday-concepts-v2.ts",
     "render:thursday-preview-if-scheduled": "node scripts/run-tsx.mjs src/scripts/render-thursday-preview-if-scheduled.ts",
     "publish:thursday-if-approved": "node scripts/run-tsx.mjs src/scripts/publish-thursday-if-approved.ts",
     "publish:thursday-if-scheduled": "node scripts/run-tsx.mjs src/scripts/publish-thursday-if-scheduled.ts",

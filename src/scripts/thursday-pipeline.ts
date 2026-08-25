@@ -3,17 +3,23 @@
  */
 import React from 'react';
 import path from 'path';
-import fs from 'fs';
 import {
   activeEventsOnly,
   fetchThursdayWindowEvents,
   fetchWeekendEvents,
 } from '../api/client';
+import { type AreaSlug, getAreaForEvent } from '../config/areas';
 import { renderToImage, closeBrowser } from '../renderer/render';
-import { EventSlide, ClosingSlide } from '../templates/weekly-digest';
-import { LensCoverSlide } from '../templates/thursday-lens';
-import { WeeklyStatsSlide, DanceDuelSlide } from '../templates/weekly-stats';
-import { CrossBorderSlide } from '../templates/cross-border';
+import {
+  CoverA2Magazine,
+  CoverA2RegionFocus,
+  ThursdayEventCard,
+  ThursdayManifestoClosing,
+  CrossBorderC3PollSplit,
+  DuelD1FloorSplit,
+  DuelD5Radar,
+} from '../templates/thursday-lens';
+import { getDanceType } from '../tokens/dance-types';
 import { uploadImages } from '../publisher/upload';
 import { publishCarousel, publishFeedImage } from '../publisher/instagram';
 import { buildThursdayCaption } from '../publisher/caption';
@@ -23,6 +29,7 @@ import {
   selectThursdayLens,
   validateThursdaySelection,
   recordThursdayPublish,
+  RARE_DANCES,
   type ThursdaySelection,
 } from '../utils/thursday-selector';
 import type { MediaEvent } from '../types';
@@ -33,8 +40,16 @@ import {
 } from '../utils/thursday-state';
 
 const OUTPUT_DIR = path.resolve(__dirname, '..', '..', 'output', 'thursday');
-const logoBase64 = fs.readFileSync(path.resolve(__dirname, '..', 'assets', 'icon-text.png')).toString('base64');
-const pinBase64 = fs.readFileSync(path.resolve(__dirname, '..', '..', 'pin_large.png')).toString('base64');
+const PROOF_LINE = 'Jeudi – Dimanche';
+
+const REGION_ACCENTS: Record<AreaSlug, string> = {
+  bab: 'salsa',
+  landes: 'bachata',
+  bearn: 'kizomba',
+  euskadi: 'zouk',
+};
+
+const RADAR_DANCE_SLUGS = ['salsa', 'bachata', 'kizomba', 'zouk', 'tango-argentin'] as const;
 
 export interface ThursdayPipelineResult {
   selection: ThursdaySelection;
@@ -46,6 +61,48 @@ export interface ThursdayPipelineResult {
 
 export function isCarouselVariant(variant: ThursdaySelection['variant']): boolean {
   return variant === 'dance-spotlight' || variant === 'autres-danses' || variant === 'area-focus';
+}
+
+function countByDance(events: MediaEvent[], slug: string): number {
+  return events.filter((e) => (e.dance_types || []).some((d) => d.slug === slug)).length;
+}
+
+function pickHeroImage(events: MediaEvent[], area: AreaSlug): string | null {
+  const areaEvents = events.filter((e) => getAreaForEvent(e) === area);
+  const withImg = areaEvents.filter((e) => e.image_url);
+  return (withImg[0] ?? areaEvents[0])?.image_url ?? null;
+}
+
+function buildRadarStyles(events: MediaEvent[]) {
+  return RADAR_DANCE_SLUGS.map((slug) => ({
+    slug,
+    label: getDanceType(slug).label_fr,
+    count: countByDance(events, slug),
+  })).filter((s) => s.count > 0);
+}
+
+function coverAccent(selection: ThursdaySelection): string | undefined {
+  if (selection.meta.featuredArea) {
+    return REGION_ACCENTS[selection.meta.featuredArea];
+  }
+  const dance = selection.meta.featuredDance;
+  if (dance && dance !== 'autres-danses') {
+    return dance;
+  }
+  return 'salsa';
+}
+
+function highlightDanceSlugForEvent(
+  selection: ThursdaySelection,
+  event: MediaEvent
+): string | undefined {
+  if (selection.variant === 'dance-spotlight' && selection.meta.featuredDance) {
+    return selection.meta.featuredDance;
+  }
+  if (selection.variant === 'autres-danses') {
+    return RARE_DANCES.find((slug) => (event.dance_types || []).some((d) => d.slug === slug));
+  }
+  return undefined;
 }
 
 export async function getTuesdayCarouselIds(): Promise<string[]> {
@@ -65,7 +122,8 @@ export async function getTuesdayCarouselIds(): Promise<string[]> {
 
 export async function renderThursdaySelection(
   selection: ThursdaySelection,
-  outDir: string
+  outDir: string,
+  pool: MediaEvent[] = []
 ): Promise<string[]> {
   if (selection.skip) {
     return [];
@@ -74,14 +132,18 @@ export async function renderThursdaySelection(
   const imagePaths: string[] = [];
 
   if (isCarouselVariant(selection.variant)) {
+    const Cover =
+      selection.variant === 'area-focus' ? CoverA2RegionFocus : CoverA2Magazine;
+
     const coverPath = path.join(outDir, '01-cover.png');
     await renderToImage({
       format: 'carousel',
       outputPath: coverPath,
-      element: React.createElement(LensCoverSlide, {
+      element: React.createElement(Cover, {
         headline: selection.meta.headline,
+        proofLine: PROOF_LINE,
+        accentSlug: coverAccent(selection),
         subheadline: selection.meta.subheadline,
-        accentSlug: selection.meta.featuredDance,
       }),
     });
     imagePaths.push(coverPath);
@@ -97,7 +159,12 @@ export async function renderThursdaySelection(
       await renderToImage({
         format: 'carousel',
         outputPath: filePath,
-        element: React.createElement(EventSlide, { event: sorted[i], pinBase64 }),
+        element: React.createElement(ThursdayEventCard, {
+          event: sorted[i],
+          index: i,
+          total: sorted.length,
+          highlightDanceSlug: highlightDanceSlugForEvent(selection, sorted[i]),
+        }),
       });
       imagePaths.push(filePath);
     }
@@ -106,18 +173,17 @@ export async function renderThursdaySelection(
     await renderToImage({
       format: 'carousel',
       outputPath: closingPath,
-      element: React.createElement(ClosingSlide, {
+      element: React.createElement(ThursdayManifestoClosing, {
         remaining: selection.meta.remaining,
-        logoBase64,
       }),
     });
     imagePaths.push(closingPath);
-  } else if (selection.variant === 'weekly-stats' && selection.meta.stats) {
-    const filePath = path.join(outDir, '01-stats.png');
+  } else if (selection.variant === 'weekly-stats') {
+    const filePath = path.join(outDir, '01-radar.png');
     await renderToImage({
       format: 'carousel',
       outputPath: filePath,
-      element: React.createElement(WeeklyStatsSlide, selection.meta.stats),
+      element: React.createElement(DuelD5Radar, { styles: buildRadarStyles(pool) }),
     });
     imagePaths.push(filePath);
   } else if (selection.variant === 'dance-duel') {
@@ -125,7 +191,7 @@ export async function renderThursdaySelection(
     await renderToImage({
       format: 'carousel',
       outputPath: filePath,
-      element: React.createElement(DanceDuelSlide, {
+      element: React.createElement(DuelD1FloorSplit, {
         salsaCount: selection.meta.salsaCount ?? 0,
         bachataCount: selection.meta.bachataCount ?? 0,
       }),
@@ -136,9 +202,11 @@ export async function renderThursdaySelection(
     await renderToImage({
       format: 'carousel',
       outputPath: filePath,
-      element: React.createElement(CrossBorderSlide, {
+      element: React.createElement(CrossBorderC3PollSplit, {
         frenchCount: selection.meta.frenchCount ?? 0,
         euskadiCount: selection.meta.euskadiCount ?? 0,
+        frenchImage: pickHeroImage(pool, 'bab'),
+        euskadiImage: pickHeroImage(pool, 'euskadi'),
       }),
     });
     imagePaths.push(filePath);
@@ -168,6 +236,9 @@ export async function runThursdayPipeline(options: {
   console.log(`  Found ${events.length} active events in Thu–Sun window\n`);
 
   const tuesdayIds = await getTuesdayCarouselIds();
+  const tuesdaySet = new Set(tuesdayIds);
+  const pool = events.filter((e) => !tuesdaySet.has(e.id));
+
   const state = loadThursdayState();
   const selection = selectThursdayLens({
     events,
@@ -179,8 +250,7 @@ export async function runThursdayPipeline(options: {
   console.log(`  Cycle position: ${selection.cyclePosition} → slot ${selection.slotType} / ${selection.variant}`);
   console.log(`  Ledger: ${getThursdayStatePath()}`);
 
-  const excludeSet = new Set(tuesdayIds);
-  const validationErrors = validateThursdaySelection(selection, excludeSet);
+  const validationErrors = validateThursdaySelection(selection, tuesdaySet);
   if (validationErrors.length > 0) {
     for (const err of validationErrors) {
       console.warn(`  ⚠ Validation: ${err}`);
@@ -205,7 +275,7 @@ export async function runThursdayPipeline(options: {
   const outDir = path.join(OUTPUT_DIR, label);
   console.log('🎨 Rendering Thursday lens...\n');
 
-  const imagePaths = await renderThursdaySelection(selection, outDir);
+  const imagePaths = await renderThursdaySelection(selection, outDir, pool);
 
   await closeBrowser();
   console.log('\n✅ Renders complete.\n');

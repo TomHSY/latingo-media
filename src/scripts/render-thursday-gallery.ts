@@ -10,12 +10,25 @@ import { buildThursdayCaption } from '../publisher/caption';
 import { closeBrowser } from '../renderer/render';
 import { getParisDateLabel, getParisThuSunBounds } from '../utils/paris-time';
 import { buildThursdayGallerySelections } from '../utils/thursday-selector';
+import { selectSpicyEvents } from '../utils/carousel-selection';
+import { loadThursdayState } from '../utils/thursday-state';
+import type { MediaEvent } from '../types';
 import {
-  getTuesdayCarouselIds,
   renderThursdaySelection,
 } from './thursday-pipeline';
 
 const OUTPUT_DIR = path.resolve(__dirname, '..', '..', 'output', 'thursday-gallery');
+
+/** Tuesday carousel IDs for gallery selection (local preview — no extra API fetch). */
+function getGalleryTuesdayIds(events: MediaEvent[]): string[] {
+  const state = loadThursdayState();
+  if (state.lastTuesdayCarouselEventIds.length > 0) {
+    return state.lastTuesdayCarouselEventIds;
+  }
+  // Gallery preview: derive excludes from Thu–Sun pool (no second API call).
+  const { selected } = selectSpicyEvents(events, 4);
+  return selected.map((e) => e.id);
+}
 
 interface GalleryManifestVariant {
   variant: string;
@@ -50,7 +63,7 @@ async function main() {
   const events = activeEventsOnly(rawEvents);
   console.log(`  Found ${events.length} active events\n`);
 
-  const tuesdayIds = await getTuesdayCarouselIds();
+  const tuesdayIds = getGalleryTuesdayIds(events);
   const entries = buildThursdayGallerySelections({
     events,
     excludeEventIds: tuesdayIds,
@@ -58,7 +71,11 @@ async function main() {
   });
 
   if (fs.existsSync(OUTPUT_DIR)) {
-    fs.rmSync(OUTPUT_DIR, { recursive: true, force: true });
+    try {
+      fs.rmSync(OUTPUT_DIR, { recursive: true, force: true, maxRetries: 2, retryDelay: 200 });
+    } catch {
+      console.warn('  ⚠ Could not clear output dir (close Explorer if open) — overwriting files\n');
+    }
   }
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
@@ -85,7 +102,7 @@ async function main() {
     }
 
     fs.mkdirSync(variantDir, { recursive: true });
-    const imagePaths = await renderThursdaySelection(entry.selection, variantDir);
+    const imagePaths = await renderThursdaySelection(entry.selection, variantDir, events);
     const caption = buildThursdayCaption(entry.selection);
 
     manifestVariants.push({

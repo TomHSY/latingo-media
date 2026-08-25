@@ -4,7 +4,9 @@ import {
   FRENCH_AREAS,
   getAreaForEvent,
   getAreaDefinition,
+  buildAreaFocusHeadline,
 } from '../config/areas';
+import { getDanceType } from '../tokens/dance-types';
 import { dedupeByTitle } from './carousel-selection';
 import { getParisIsoWeekLabel } from './paris-time';
 import {
@@ -36,7 +38,8 @@ const MIN_DANCE_EVENTS = 2;
 const MIN_AREA_EVENTS = 3;
 const MIN_RARE_COMBINED = 3;
 const MIN_CROSSBORDER_EUSKADI = 4;
-const MIN_CROSSBORDER_FR = 4;
+const MIN_CROSSBORDER_BAB = 4;
+const CROSSBORDER_BALANCE_RATIO = 0.6;
 const MIN_DUEL_EACH = 5;
 const MIN_STATS_TOTAL = 10;
 
@@ -133,6 +136,26 @@ function countFrenchAreas(events: MediaEvent[]): number {
   }).length;
 }
 
+function isCrossBorderBalanced(babCount: number, euskadiCount: number): boolean {
+  if (babCount < MIN_CROSSBORDER_BAB || euskadiCount < MIN_CROSSBORDER_EUSKADI) {
+    return false;
+  }
+  const max = Math.max(babCount, euskadiCount);
+  const min = Math.min(babCount, euskadiCount);
+  return min / max >= CROSSBORDER_BALANCE_RATIO;
+}
+
+function crossBorderMeta(babCount: number, euskadiCount: number): ThursdaySelectionMeta {
+  return {
+    headline: 'Pays Basque : France / Espagne',
+    subheadline: 'Tu danses de quel côté ce week-end ?',
+    totalMatching: babCount + euskadiCount,
+    remaining: 0,
+    frenchCount: babCount,
+    euskadiCount,
+  };
+}
+
 function selectTopEvents(
   pool: MediaEvent[],
   count: number,
@@ -146,21 +169,43 @@ function selectTopEvents(
     .map((c) => c.event);
 }
 
+function isPureSpotlightEvent(event: MediaEvent, featuredDance: string): boolean {
+  const slugs = getDanceSlugs(event);
+  return slugs.size === 1 && slugs.has(featuredDance);
+}
+
 function selectDanceSpotlightEvents(
   pool: MediaEvent[],
   featuredDance: string,
   count: number
 ): MediaEvent[] {
-  const eligible = pool.filter((e) => eventHasDance(e, featuredDance));
-  return selectTopEvents(eligible, count, (e) => baseEventScore(e) * sbkTierMultiplier(e, featuredDance));
+  const eligible = pool.filter((e) => isPureSpotlightEvent(e, featuredDance));
+  return selectTopEvents(eligible, count, baseEventScore);
+}
+
+function coreDanceCount(event: MediaEvent): number {
+  return CORE_DANCES.filter((d) => eventHasDance(event, d)).length;
+}
+
+function buildAutresDansesSubheadline(pool: MediaEvent[]): string {
+  const labels = RARE_DANCES.filter((slug) => countByDance(pool, slug) > 0).map(
+    (slug) => getDanceType(slug).label_fr
+  );
+  if (labels.length === 0) {
+    return 'Zouk · Tango argentin · West Coast Swing · Semba';
+  }
+  return labels.join(' · ');
 }
 
 function selectAutresDansesEvents(pool: MediaEvent[], count: number): MediaEvent[] {
   const eligible = pool.filter((e) => RARE_DANCES.some((d) => eventHasDance(e, d)));
+  // Prefer events that aren't full SBK parties with a rare tag on the side.
+  const focused = eligible.filter((e) => coreDanceCount(e) <= 1);
+  const source = focused.length >= count ? focused : eligible.filter((e) => coreDanceCount(e) < 3);
   const usedRare = new Set<string>();
   const picked: MediaEvent[] = [];
 
-  const byScore = [...eligible].sort((a, b) => baseEventScore(b) - baseEventScore(a));
+  const byScore = [...source].sort((a, b) => baseEventScore(b) - baseEventScore(a));
 
   for (const event of byScore) {
     if (picked.length >= count) break;
@@ -336,7 +381,7 @@ export function selectThursdayLens(options: SelectThursdayOptions): ThursdaySele
         meta: {
           featuredDance: 'autres-danses',
           headline: buildDanceHeadline('autres-danses', selected.length, false),
-          subheadline: "LatinGo, c'est pas que SBK",
+          subheadline: buildAutresDansesSubheadline(pool),
           totalMatching: matching.length,
           remaining: Math.max(matching.length - selected.length, 0),
         },
@@ -357,7 +402,7 @@ export function selectThursdayLens(options: SelectThursdayOptions): ThursdaySele
             meta: {
               featuredDance: 'autres-danses',
               headline: buildDanceHeadline('autres-danses', selected.length, false),
-              subheadline: "LatinGo, c'est pas que SBK",
+              subheadline: buildAutresDansesSubheadline(pool),
               totalMatching: matching.length,
               remaining: Math.max(matching.length - selected.length, 0),
             },
@@ -392,10 +437,9 @@ export function selectThursdayLens(options: SelectThursdayOptions): ThursdaySele
 
   if (slotType === 'area') {
     const euskadiCount = countByArea(pool, 'euskadi');
-    const frenchCount = countFrenchAreas(pool);
+    const babCount = countByArea(pool, 'bab');
     const crossBorderEligible =
-      euskadiCount >= MIN_CROSSBORDER_EUSKADI &&
-      frenchCount >= MIN_CROSSBORDER_FR &&
+      isCrossBorderBalanced(babCount, euskadiCount) &&
       !isOnCooldown(state.cooldowns.area, 'cross-border', currentWeek, AREA_COOLDOWN_WEEKS);
 
     if (crossBorderEligible) {
@@ -405,37 +449,20 @@ export function selectThursdayLens(options: SelectThursdayOptions): ThursdaySele
         events: [],
         skip: false,
         cyclePosition,
-        meta: {
-          headline: "L'autre côté de la frontière",
-          subheadline: 'Ce week-end en SBK',
-          totalMatching: pool.length,
-          remaining: 0,
-          frenchCount,
-          euskadiCount,
-        },
+        meta: crossBorderMeta(babCount, euskadiCount),
       };
     }
 
     const featuredArea = pickFeaturedArea(pool, state, currentWeek);
     if (!featuredArea) {
-      if (
-        euskadiCount >= MIN_CROSSBORDER_EUSKADI &&
-        frenchCount >= MIN_CROSSBORDER_FR
-      ) {
+      if (isCrossBorderBalanced(babCount, euskadiCount)) {
         return {
           slotType,
           variant: 'cross-border',
           events: [],
           skip: false,
           cyclePosition,
-          meta: {
-            headline: "L'autre côté de la frontière",
-            subheadline: 'Ce week-end en SBK',
-            totalMatching: pool.length,
-            remaining: 0,
-            frenchCount,
-            euskadiCount,
-          },
+          meta: crossBorderMeta(babCount, euskadiCount),
         };
       }
       return skip('area-focus', 'No area meets threshold or cooldown');
@@ -447,7 +474,6 @@ export function selectThursdayLens(options: SelectThursdayOptions): ThursdaySele
       return skip('area-focus', 'No events selected for area focus');
     }
 
-    const areaName = getAreaDefinition(featuredArea).displayName;
     return {
       slotType,
       variant: 'area-focus',
@@ -456,7 +482,7 @@ export function selectThursdayLens(options: SelectThursdayOptions): ThursdaySele
       cyclePosition,
       meta: {
         featuredArea,
-        headline: `Que faire en ${areaName} ce week-end ?`,
+        headline: buildAreaFocusHeadline(featuredArea),
         totalMatching: matching.length,
         remaining: Math.max(matching.length - selected.length, 0),
       },
@@ -632,7 +658,7 @@ export function buildThursdayGallerySelections(options: BuildGalleryOptions): Th
   const salsaCount = countByDance(pool, 'salsa');
   const bachataCount = countByDance(pool, 'bachata');
   const euskadiCount = countByArea(pool, 'euskadi');
-  const frenchCount = countFrenchAreas(pool);
+  const babCount = countByArea(pool, 'bab');
   const rareCount = countRareCombined(pool);
 
   const entries: ThursdayGalleryEntry[] = [];
@@ -695,7 +721,7 @@ export function buildThursdayGallerySelections(options: BuildGalleryOptions): Th
       meta: {
         featuredDance: 'autres-danses',
         headline: buildDanceHeadline('autres-danses', rareMatching.length, false),
-        subheadline: "LatinGo, c'est pas que SBK",
+        subheadline: buildAutresDansesSubheadline(pool),
         totalMatching: rareMatching.length,
         remaining: Math.max(rareMatching.length - autresSelected.length, 0),
       },
@@ -724,7 +750,7 @@ export function buildThursdayGallerySelections(options: BuildGalleryOptions): Th
         cyclePosition: -1,
         meta: {
           featuredArea,
-          headline: `Que faire en ${areaName} ce week-end ?`,
+          headline: buildAreaFocusHeadline(featuredArea),
           totalMatching: matching.length,
           remaining: Math.max(matching.length - selected.length, 0),
         },
@@ -741,25 +767,17 @@ export function buildThursdayGallerySelections(options: BuildGalleryOptions): Th
 
   entries.push({
     variant: 'cross-border',
-    skipped: false,
-    note:
-      euskadiCount < MIN_CROSSBORDER_EUSKADI || frenchCount < MIN_CROSSBORDER_FR
-        ? `Counts FR=${frenchCount} Euskadi=${euskadiCount} (production min ${MIN_CROSSBORDER_FR}/${MIN_CROSSBORDER_EUSKADI})`
-        : undefined,
+    skipped: !isCrossBorderBalanced(babCount, euskadiCount),
+    note: !isCrossBorderBalanced(babCount, euskadiCount)
+      ? `Pays Basque BAB=${babCount} Euskadi=${euskadiCount} (min ${MIN_CROSSBORDER_BAB}/${MIN_CROSSBORDER_EUSKADI}, ratio ≥ ${CROSSBORDER_BALANCE_RATIO})`
+      : undefined,
     selection: {
       slotType: 'area',
       variant: 'cross-border',
       events: [],
-      skip: false,
+      skip: !isCrossBorderBalanced(babCount, euskadiCount),
       cyclePosition: -1,
-      meta: {
-        headline: "L'autre côté de la frontière",
-        subheadline: 'Ce week-end en SBK',
-        totalMatching: pool.length,
-        remaining: 0,
-        frenchCount,
-        euskadiCount,
-      },
+      meta: crossBorderMeta(babCount, euskadiCount),
     },
   });
 

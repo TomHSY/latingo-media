@@ -92,13 +92,11 @@ export function buildThursdayCaption(selection: ThursdaySelection): string {
   }
 
   if (variant === 'cross-border' && meta.frenchCount != null && meta.euskadiCount != null) {
-    lines.push(`${meta.frenchCount} côté français · ${meta.euskadiCount} en Euskadi`);
+    lines.push(`${meta.frenchCount} soirées France · ${meta.euskadiCount} soirées Espagne`);
   }
 
-  if (variant === 'weekly-stats' && meta.stats) {
-    lines.push(
-      `${meta.stats.totalEvents} soirées · ${meta.stats.activeAreas} zones · ${meta.stats.danceStyles} styles`
-    );
+  if (variant === 'weekly-stats') {
+    lines.push('Radar danse · Jeu–Dim');
   }
 
   if (events.length > 0) {
