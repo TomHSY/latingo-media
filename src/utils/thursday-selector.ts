@@ -5,6 +5,7 @@ import {
   getAreaForEvent,
   getAreaDefinition,
   buildAreaFocusHeadline,
+  buildAreaFocusSubheadline,
 } from '../config/areas';
 import { getDanceType } from '../tokens/dance-types';
 import { dedupeByTitle } from './carousel-selection';
@@ -34,7 +35,7 @@ export const THURSDAY_EVENT_COUNT = 3;
 
 const DANCE_COOLDOWN_WEEKS = 3;
 const AREA_COOLDOWN_WEEKS = 2;
-const MIN_DANCE_EVENTS = 2;
+const MIN_DANCE_EVENTS = THURSDAY_EVENT_COUNT;
 const MIN_AREA_EVENTS = 3;
 const MIN_RARE_COMBINED = 3;
 const MIN_CROSSBORDER_EUSKADI = 4;
@@ -233,25 +234,140 @@ function selectAreaEvents(pool: MediaEvent[], area: AreaSlug, count: number): Me
   return selectTopEvents(eligible, count, baseEventScore);
 }
 
-function pickFeaturedDance(
+function countPureByDance(events: MediaEvent[], slug: string): number {
+  return events.filter((e) => isPureSpotlightEvent(e, slug)).length;
+}
+
+function rankCoreDancesForSpotlight(
   pool: MediaEvent[],
   state: ThursdayState,
-  currentWeek: string
-): string | null {
-  let best: { dance: string; score: number } | null = null;
+  currentWeek: string,
+  ignoreCooldown = false
+): Array<{ dance: string; pureCount: number; score: number }> {
+  const ranked: Array<{ dance: string; pureCount: number; score: number }> = [];
 
   for (const dance of CORE_DANCES) {
-    const count = countByDance(pool, dance);
-    if (count < MIN_DANCE_EVENTS) continue;
-    const fresh = freshnessFactor(state.cooldowns.dance, dance, currentWeek, DANCE_COOLDOWN_WEEKS);
-    if (fresh === 0) continue;
-    const score = count * fresh;
-    if (!best || score > best.score || (score === best.score && dance < best.dance)) {
-      best = { dance, score };
+    const pureCount = countPureByDance(pool, dance);
+    if (pureCount < MIN_DANCE_EVENTS) continue;
+
+    let fresh = 1;
+    if (!ignoreCooldown) {
+      fresh = freshnessFactor(state.cooldowns.dance, dance, currentWeek, DANCE_COOLDOWN_WEEKS);
+      if (fresh === 0) continue;
+    }
+
+    ranked.push({ dance, pureCount, score: pureCount * fresh });
+  }
+
+  ranked.sort(
+    (a, b) => b.score - a.score || b.pureCount - a.pureCount || a.dance.localeCompare(b.dance)
+  );
+  return ranked;
+}
+
+interface CoreSpotlightResult {
+  featuredDance: string;
+  selected: MediaEvent[];
+  pureMatching: number;
+}
+
+function resolveCoreSpotlight(
+  pool: MediaEvent[],
+  state: ThursdayState,
+  currentWeek: string,
+  ignoreCooldown = false
+): CoreSpotlightResult | null {
+  const ranked = rankCoreDancesForSpotlight(pool, state, currentWeek, ignoreCooldown);
+
+  for (const { dance, pureCount } of ranked) {
+    const selected = selectDanceSpotlightEvents(pool, dance, THURSDAY_EVENT_COUNT);
+    if (selected.length >= MIN_DANCE_EVENTS) {
+      return { featuredDance: dance, selected, pureMatching: pureCount };
     }
   }
 
-  return best?.dance ?? null;
+  return null;
+}
+
+interface AutresDansesResult {
+  selected: MediaEvent[];
+  totalMatching: number;
+}
+
+function tryAutresDansesFallback(pool: MediaEvent[]): AutresDansesResult | null {
+  const matching = pool.filter((e) => RARE_DANCES.some((d) => eventHasDance(e, d)));
+  const selected = selectAutresDansesEvents(pool, THURSDAY_EVENT_COUNT);
+  if (selected.length < MIN_DANCE_EVENTS) {
+    return null;
+  }
+  return { selected, totalMatching: matching.length };
+}
+
+function buildCoreSpotlightSelection(
+  core: CoreSpotlightResult,
+  slotType: ThursdaySlotType,
+  cyclePosition: number
+): ThursdaySelection {
+  return {
+    slotType,
+    variant: 'dance-spotlight',
+    events: core.selected,
+    skip: false,
+    cyclePosition,
+    meta: {
+      featuredDance: core.featuredDance,
+      headline: buildDanceHeadline(core.featuredDance, core.pureMatching, false),
+      totalMatching: core.pureMatching,
+      remaining: Math.max(core.pureMatching - core.selected.length, 0),
+      mostlySbk: false,
+    },
+  };
+}
+
+function buildAutresDansesSelection(
+  autres: AutresDansesResult,
+  pool: MediaEvent[],
+  slotType: ThursdaySlotType,
+  cyclePosition: number
+): ThursdaySelection {
+  return {
+    slotType,
+    variant: 'autres-danses',
+    events: autres.selected,
+    skip: false,
+    cyclePosition,
+    meta: {
+      featuredDance: 'autres-danses',
+      headline: buildDanceHeadline('autres-danses', autres.selected.length, false),
+      subheadline: buildAutresDansesSubheadline(pool),
+      totalMatching: autres.totalMatching,
+      remaining: Math.max(autres.totalMatching - autres.selected.length, 0),
+    },
+  };
+}
+
+function buildAreaSpotlightSelection(
+  featuredArea: AreaSlug,
+  selected: MediaEvent[],
+  pool: MediaEvent[],
+  slotType: ThursdaySlotType,
+  cyclePosition: number
+): ThursdaySelection {
+  const matching = pool.filter((e) => getAreaForEvent(e) === featuredArea);
+  return {
+    slotType,
+    variant: 'area-focus',
+    events: selected,
+    skip: false,
+    cyclePosition,
+    meta: {
+      featuredArea,
+      headline: buildAreaFocusHeadline(featuredArea),
+      subheadline: buildAreaFocusSubheadline(pool, featuredArea),
+      totalMatching: matching.length,
+      remaining: Math.max(matching.length - selected.length, 0),
+    },
+  };
 }
 
 function pickFeaturedArea(
@@ -294,12 +410,6 @@ function buildDanceHeadline(featuredDance: string, count: number, mostlySbk: boo
     return `${count} soirée${count > 1 ? 's' : ''} ${danceDisplayName(featuredDance)} et SBK ce week-end`;
   }
   return `${count} soirée${count > 1 ? 's' : ''} ${danceDisplayName(featuredDance)} ce week-end`;
-}
-
-function isMostlySbk(events: MediaEvent[], featuredDance: string): boolean {
-  if (events.length === 0) return false;
-  const sbkCount = events.filter((e) => sbkTierMultiplier(e, featuredDance) <= 0.5).length;
-  return sbkCount >= Math.ceil(events.length / 2);
 }
 
 function computeStats(pool: MediaEvent[], weekStart: Date): ThursdaySelectionMeta['stats'] {
@@ -359,80 +469,20 @@ export function selectThursdayLens(options: SelectThursdayOptions): ThursdaySele
   });
 
   if (slotType === 'dance') {
-    const rareCount = countRareCombined(pool);
-    const autresEligible =
-      rareCount >= MIN_RARE_COMBINED &&
-      !isOnCooldown(state.cooldowns.dance, 'autres-danses', currentWeek, DANCE_COOLDOWN_WEEKS);
-
-    const featuredDance = pickFeaturedDance(pool, state, currentWeek);
-
-    if (autresEligible && (!featuredDance || rareCount * freshnessFactor(state.cooldowns.dance, 'autres-danses', currentWeek, DANCE_COOLDOWN_WEEKS) >= (featuredDance ? countByDance(pool, featuredDance) * 0.8 : 0))) {
-      const matching = pool.filter((e) => RARE_DANCES.some((d) => eventHasDance(e, d)));
-      const selected = selectAutresDansesEvents(pool, THURSDAY_EVENT_COUNT);
-      if (selected.length < 1) {
-        return skip('autres-danses', 'No rare-dance events to feature');
-      }
-      return {
-        slotType,
-        variant: 'autres-danses',
-        events: selected,
-        skip: false,
-        cyclePosition,
-        meta: {
-          featuredDance: 'autres-danses',
-          headline: buildDanceHeadline('autres-danses', selected.length, false),
-          subheadline: buildAutresDansesSubheadline(pool),
-          totalMatching: matching.length,
-          remaining: Math.max(matching.length - selected.length, 0),
-        },
-      };
+    const core = resolveCoreSpotlight(pool, state, currentWeek);
+    if (core) {
+      return buildCoreSpotlightSelection(core, slotType, cyclePosition);
     }
 
-    if (!featuredDance) {
-      if (autresEligible) {
-        const matching = pool.filter((e) => RARE_DANCES.some((d) => eventHasDance(e, d)));
-        const selected = selectAutresDansesEvents(pool, THURSDAY_EVENT_COUNT);
-        if (selected.length >= 1) {
-          return {
-            slotType,
-            variant: 'autres-danses',
-            events: selected,
-            skip: false,
-            cyclePosition,
-            meta: {
-              featuredDance: 'autres-danses',
-              headline: buildDanceHeadline('autres-danses', selected.length, false),
-              subheadline: buildAutresDansesSubheadline(pool),
-              totalMatching: matching.length,
-              remaining: Math.max(matching.length - selected.length, 0),
-            },
-          };
-        }
-      }
-      return skip('dance-spotlight', 'No core dance meets threshold or cooldown');
+    const autres = tryAutresDansesFallback(pool);
+    if (autres) {
+      return buildAutresDansesSelection(autres, pool, slotType, cyclePosition);
     }
 
-    const matching = pool.filter((e) => eventHasDance(e, featuredDance));
-    const selected = selectDanceSpotlightEvents(pool, featuredDance, THURSDAY_EVENT_COUNT);
-    if (selected.length < 1) {
-      return skip('dance-spotlight', 'No events selected for dance spotlight');
-    }
-
-    const mostlySbk = isMostlySbk(selected, featuredDance);
-    return {
-      slotType,
-      variant: 'dance-spotlight',
-      events: selected,
-      skip: false,
-      cyclePosition,
-      meta: {
-        featuredDance,
-        headline: buildDanceHeadline(featuredDance, matching.length, mostlySbk),
-        totalMatching: matching.length,
-        remaining: Math.max(matching.length - selected.length, 0),
-        mostlySbk,
-      },
-    };
+    return skip(
+      'dance-spotlight',
+      `No core dance with enough pure events (min ${THURSDAY_EVENT_COUNT}) and no autres-danses fallback`
+    );
   }
 
   if (slotType === 'area') {
@@ -468,25 +518,15 @@ export function selectThursdayLens(options: SelectThursdayOptions): ThursdaySele
       return skip('area-focus', 'No area meets threshold or cooldown');
     }
 
-    const matching = pool.filter((e) => getAreaForEvent(e) === featuredArea);
     const selected = selectAreaEvents(pool, featuredArea, THURSDAY_EVENT_COUNT);
-    if (selected.length < 1) {
-      return skip('area-focus', 'No events selected for area focus');
+    if (selected.length < MIN_AREA_EVENTS) {
+      return skip(
+        'area-focus',
+        `Only ${selected.length} event(s) in ${getAreaDefinition(featuredArea).displayName} (min ${MIN_AREA_EVENTS})`
+      );
     }
 
-    return {
-      slotType,
-      variant: 'area-focus',
-      events: selected,
-      skip: false,
-      cyclePosition,
-      meta: {
-        featuredArea,
-        headline: buildAreaFocusHeadline(featuredArea),
-        totalMatching: matching.length,
-        remaining: Math.max(matching.length - selected.length, 0),
-      },
-    };
+    return buildAreaSpotlightSelection(featuredArea, selected, pool, slotType, cyclePosition);
   }
 
   // stats slot
@@ -610,18 +650,6 @@ export interface BuildGalleryOptions {
   reference?: Date;
 }
 
-function pickGalleryFeaturedDance(pool: MediaEvent[]): string | null {
-  let best: { dance: string; count: number } | null = null;
-  for (const dance of CORE_DANCES) {
-    const count = countByDance(pool, dance);
-    if (count < 1) continue;
-    if (!best || count > best.count || (count === best.count && dance < best.dance)) {
-      best = { dance, count };
-    }
-  }
-  return best?.dance ?? null;
-}
-
 function pickGalleryFeaturedArea(pool: MediaEvent[]): AreaSlug | null {
   let best: { area: AreaSlug; count: number } | null = null;
   const areaSlugs: AreaSlug[] = ['bab', 'landes', 'bearn', 'euskadi'];
@@ -663,40 +691,22 @@ export function buildThursdayGallerySelections(options: BuildGalleryOptions): Th
 
   const entries: ThursdayGalleryEntry[] = [];
 
-  const featuredDance = pickGalleryFeaturedDance(pool);
-  if (featuredDance) {
-    const matching = pool.filter((e) => eventHasDance(e, featuredDance));
-    const selected = selectDanceSpotlightEvents(pool, featuredDance, THURSDAY_EVENT_COUNT);
-    const mostlySbk = isMostlySbk(selected, featuredDance);
+  const coreSpotlight = resolveCoreSpotlight(pool, loadThursdayState(), getParisIsoWeekLabel(reference), true);
+  if (coreSpotlight) {
     entries.push({
       variant: 'dance-spotlight',
-      skipped: selected.length < 1,
+      skipped: false,
       note:
-        matching.length < MIN_DANCE_EVENTS
-          ? `Only ${matching.length} matching event(s) (production min ${MIN_DANCE_EVENTS})`
-          : selected.length < THURSDAY_EVENT_COUNT
-            ? `Only ${selected.length} event card(s) rendered (ideal ${THURSDAY_EVENT_COUNT})`
-            : undefined,
-      selection: {
-        slotType: 'dance',
-        variant: 'dance-spotlight',
-        events: selected,
-        skip: selected.length < 1,
-        cyclePosition: -1,
-        meta: {
-          featuredDance,
-          headline: buildDanceHeadline(featuredDance, matching.length, mostlySbk),
-          totalMatching: matching.length,
-          remaining: Math.max(matching.length - selected.length, 0),
-          mostlySbk,
-        },
-      },
+        coreSpotlight.selected.length < THURSDAY_EVENT_COUNT
+          ? `Only ${coreSpotlight.selected.length} pure event card(s) rendered (ideal ${THURSDAY_EVENT_COUNT})`
+          : undefined,
+      selection: buildCoreSpotlightSelection(coreSpotlight, 'dance', -1),
     });
   } else {
     entries.push({
       variant: 'dance-spotlight',
       skipped: true,
-      note: 'No core dance events in Thu–Sun window',
+      note: `No core dance with ≥${MIN_DANCE_EVENTS} pure events in Thu–Sun window`,
       selection: emptyGallerySelection('dance-spotlight', 'dance'),
     });
   }
@@ -735,7 +745,7 @@ export function buildThursdayGallerySelections(options: BuildGalleryOptions): Th
     const areaName = getAreaDefinition(featuredArea).displayName;
     entries.push({
       variant: 'area-focus',
-      skipped: selected.length < 1,
+      skipped: selected.length < MIN_AREA_EVENTS,
       note:
         matching.length < MIN_AREA_EVENTS
           ? `Only ${matching.length} event(s) in ${areaName} (production min ${MIN_AREA_EVENTS})`
@@ -743,17 +753,8 @@ export function buildThursdayGallerySelections(options: BuildGalleryOptions): Th
             ? `Only ${selected.length} event card(s) rendered`
             : undefined,
       selection: {
-        slotType: 'area',
-        variant: 'area-focus',
-        events: selected,
-        skip: selected.length < 1,
-        cyclePosition: -1,
-        meta: {
-          featuredArea,
-          headline: buildAreaFocusHeadline(featuredArea),
-          totalMatching: matching.length,
-          remaining: Math.max(matching.length - selected.length, 0),
-        },
+        ...buildAreaSpotlightSelection(featuredArea, selected, pool, 'area', -1),
+        skip: selected.length < MIN_AREA_EVENTS,
       },
     });
   } else {

@@ -5,7 +5,7 @@
 import 'dotenv/config';
 import fs from 'fs';
 import path from 'path';
-import { activeEventsOnly, fetchThursdayWindowEvents } from '../api/client';
+import { buildThursdayExcludeIds } from '../config/thursday-exclusions';
 import { buildThursdayCaption } from '../publisher/caption';
 import { closeBrowser } from '../renderer/render';
 import { getParisDateLabel, getParisThuSunBounds } from '../utils/paris-time';
@@ -64,9 +64,10 @@ async function main() {
   console.log(`  Found ${events.length} active events\n`);
 
   const tuesdayIds = getGalleryTuesdayIds(events);
+  const excludeEventIds = buildThursdayExcludeIds(events, tuesdayIds);
   const entries = buildThursdayGallerySelections({
     events,
-    excludeEventIds: tuesdayIds,
+    excludeEventIds,
     reference,
   });
 

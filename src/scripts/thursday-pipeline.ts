@@ -9,6 +9,7 @@ import {
   fetchWeekendEvents,
 } from '../api/client';
 import { type AreaSlug, getAreaForEvent } from '../config/areas';
+import { buildThursdayExcludeIds } from '../config/thursday-exclusions';
 import { renderToImage, closeBrowser } from '../renderer/render';
 import {
   CoverA2Magazine,
@@ -164,6 +165,7 @@ export async function renderThursdaySelection(
           index: i,
           total: sorted.length,
           highlightDanceSlug: highlightDanceSlugForEvent(selection, sorted[i]),
+          regionSpotlight: selection.variant === 'area-focus',
         }),
       });
       imagePaths.push(filePath);
@@ -236,13 +238,14 @@ export async function runThursdayPipeline(options: {
   console.log(`  Found ${events.length} active events in Thu–Sun window\n`);
 
   const tuesdayIds = await getTuesdayCarouselIds();
-  const tuesdaySet = new Set(tuesdayIds);
-  const pool = events.filter((e) => !tuesdaySet.has(e.id));
+  const excludeEventIds = buildThursdayExcludeIds(events, tuesdayIds);
+  const excludeSet = new Set(excludeEventIds);
+  const pool = events.filter((e) => !excludeSet.has(e.id));
 
   const state = loadThursdayState();
   const selection = selectThursdayLens({
     events,
-    excludeEventIds: tuesdayIds,
+    excludeEventIds,
     state,
     reference,
   });
@@ -250,7 +253,7 @@ export async function runThursdayPipeline(options: {
   console.log(`  Cycle position: ${selection.cyclePosition} → slot ${selection.slotType} / ${selection.variant}`);
   console.log(`  Ledger: ${getThursdayStatePath()}`);
 
-  const validationErrors = validateThursdaySelection(selection, tuesdaySet);
+  const validationErrors = validateThursdaySelection(selection, excludeSet);
   if (validationErrors.length > 0) {
     for (const err of validationErrors) {
       console.warn(`  ⚠ Validation: ${err}`);

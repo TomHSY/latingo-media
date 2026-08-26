@@ -22,6 +22,19 @@ Cycle position determines slot **type**. The selector picks the best **variant**
 - **Exclude** event IDs featured in this week's Tuesday carousel.
 - **Exclude** cancelled events (`activeEventsOnly()`).
 
+## Editorial model (Aug 2026)
+
+Two distinct carousel promises — do not mix their rules:
+
+| Slot | Scope | Styles on cards | Cover example |
+|------|--------|-----------------|---------------|
+| **Dance spotlight** | **Global** — all regions in Thu–Sun pool | **Pure only** — single dance tag matching featured style | *"3 soirées bachata ce week-end"* |
+| **Autres danses** | Global | Rare styles (zouk, tango, WCS, semba); focused picks | *"Et si tu sortais des sentiers battus ?"* |
+| **Region spotlight** (`area-focus`) | **One area** — BAB, Landes, Béarn, or Euskadi | **All styles** — mixed SBK parties OK | *"Où danser au Pays Basque ce week-end ?"* + *"8 soirées · Salsa · Bachata · …"* |
+
+Dance posts answer *"I want bachata this weekend (anywhere)."*  
+Region posts answer *"What's on near me (any style)?"*
+
 ## Scarcity
 
 - Show **3 event cards** on dance/area posts (not 4 like Tuesday).
@@ -41,62 +54,61 @@ City → area mapping lives in `src/config/areas.ts`.
 
 **Naming:** "Béarn" is acceptable in social copy (Tarbes is Bigorre but brevity wins). Use **Euskadi**, not generic "Spain". Cross-border copy may use *"l'autre côté de la frontière"*.
 
-### Area selection
-
-```
-score(area) = eventCount(area, thuSun) × freshnessFactor(area)
-```
-
-- Threshold: **≥ 3 events** in area
-- Cooldown: **2 weeks** per area
-- Tie-break: highest count, then least recently featured
-
 ## Dance spotlight
+
+**Global scope.** Picks from the full Thu–Sun pool (all mapped areas + unmapped cities). Never filter by region.
 
 ### Core dances
 
 `salsa`, `bachata`, `kizomba`
 
 ```
-score(dance) = eligibleEventCount(dance) × freshnessFactor(dance)
+score(dance) = pureEventCount(dance) × freshnessFactor(dance)
 ```
 
-- Threshold: **≥ 2 eligible events**
+- **Pure only:** event must have exactly one dance tag, matching the featured dance
+- Minimum: **3 pure events** to publish (`THURSDAY_EVENT_COUNT`)
+- Fallback order: try next core dance by score → **autres danses** → skip
+- Headline count = **pure pool size** (not tagged/mixed pool)
 - Cooldown: **3 weeks** per core dance
 
-### SBK tier multipliers (event card selection)
-
-When picking the 3 featured events for a dance spotlight:
-
-| Event composition | Multiplier |
-|-------------------|------------|
-| Pure featured dance only | 1.0 |
-| Featured + bachata (no kizomba) | 0.75 |
-| Featured + other non-core | 0.50 |
-| Full SBK (salsa + bachata + kizomba) | 0.40 |
-
-Show all dance pills on each card. Highlight featured dance in headline.
-
-**Copy:**
-- Mostly pure/partial: *"3 soirées salsa ce week-end"*
-- Mostly SBK fill: *"3 soirées salsa et SBK ce week-end"*
+**Copy:** *"3 soirées salsa ce week-end"* (number = pure events in pool)
 
 ### Autres danses bundle
 
 Rare slugs: `zouk`, `semba`, `west-coast-swing`, `tango-argentin`
 
-- Trigger: combined count **≥ 3** in Thu–Sun window
-- Competes for dance slots via scoring + cooldown
-- Headlines: *"Et si tu sortais des sentiers battus ?"* / *"LatinGo, c'est pas que SBK"*
-- Prefer one event per rare dance type on cards
+- Fallback when no core dance has ≥ 3 pure events
+- Minimum **3 cards**; prefer one event per rare type
+- Headline: *"Et si tu sortais des sentiers battus ?"*
+- Subheadline: dynamic list of rare styles in the window
 - Ledger key: `autres-danses`
+
+## Region spotlight (`area-focus`)
+
+**Single-area scope.** All dance styles welcome — salsa+bachata parties are valid cards.
+
+```
+score(area) = eventCount(area, thuSun) × freshnessFactor(area)
+```
+
+- Threshold: **≥ 3 events** in area (any style)
+- Minimum **3 cards** to publish
+- Cooldown: **2 weeks** per area
+- Headline: area question from `buildAreaFocusHeadline()` (e.g. *"Où danser au Pays Basque ce week-end ?"*)
+- Subheadline: total area count + styles present (`buildAreaFocusSubheadline()`)
+- Event cards show combined dance chip (e.g. *"Salsa · Bachata"*)
+
+### Cross-border (area slot alternate)
+
+FR vs ES event counts. Headline: *"Pays Basque : France / Espagne"*. Ledger key: `cross-border`.
 
 ## Slot variants
 
 | Slot type | Default variant | Alternate variant | Trigger |
 |-----------|-----------------|-------------------|---------|
-| Dance | Dance spotlight | Autres danses | Rare combined ≥ 3 |
-| Area | Area focus | Cross-border | Euskadi ≥ 4 AND French areas combined ≥ 4 |
+| Dance | Dance spotlight (global, pure) | Autres danses | No core dance ≥ 3 pure |
+| Area | Region spotlight | Cross-border | BAB/Euskadi balanced |
 | Stats | Weekly stats | Salsa vs Bachata duel | Salsa ≥ 5 AND Bachata ≥ 5 |
 
 ### Weekly stats (default)
@@ -107,18 +119,15 @@ Metrics for Thu–Sun window: total events, areas active, dance styles, new even
 
 Side-by-side counts. One hero visual per dance. No individual event details.
 
-### Cross-border
-
-FR vs ES event counts. Headline: *"L'autre côté de la frontière"*. Ledger key: `cross-border`.
-
 ## Fallback cascade
 
 | Condition | Action |
 |-----------|--------|
-| Dance slot, no core dance ≥ 2 | Try autres danses; else skip, log thin week |
-| Area slot, no area ≥ 3 | Try cross-border if thresholds met; else skip |
+| Dance slot, no core dance ≥ 3 pure | Try autres danses (≥ 3 cards); else skip |
+| Area slot, no area ≥ 3 events | Try cross-border if balanced; else skip |
+| Area slot, < 3 cards after selection | Skip |
 | Stats slot, total events < 10 | Skip Thursday publish |
-| Selected events < 1 after filters | Do not render; do not publish |
+| Selected events < minimum after filters | Do not render; do not publish |
 
 Never auto-publish a weak or empty template.
 
@@ -159,10 +168,11 @@ DRY_RUN=true npm run render:thursday-preview
 
 | Risk | Safeguard |
 |------|-----------|
-| Salsa dominates | 3-week dance cooldown; SBK tiers deprioritize full SBK |
-| BAB always wins | 2-week area cooldown; full area pool |
-| Same events Tue + Thu | Hard exclude Tuesday carousel IDs |
-| Rare dances invisible | Autres danses bundle at ≥ 3 combined |
+| Salsa dominates dance weeks | 3-week dance cooldown; pure-only filter |
+| BAB always wins area weeks | 2-week area cooldown; rotate areas |
+| Same events Tue + Thu | Hard exclude Tuesday carousel IDs + founder exclusions |
+| Rare dances invisible | Autres danses fallback on dance weeks |
+| Pure dance too scarce | Region weeks use all styles; dance weeks fallback |
 | Weak post goes live | Fallback → skip; founder review gate |
 
 ## Deferred (not v1 automation)

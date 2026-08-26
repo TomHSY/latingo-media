@@ -2,6 +2,8 @@
  * Geographic areas for Thursday lens rotation.
  * Maps API city names → BAB / Landes / Béarn / Euskadi.
  */
+import type { MediaEvent } from '../types';
+import { getDanceType } from '../tokens/dance-types';
 
 export type AreaSlug = 'bab' | 'landes' | 'bearn' | 'euskadi';
 
@@ -111,5 +113,39 @@ export const AREA_FOCUS_HEADLINES: Record<AreaSlug, string> = {
 
 export function buildAreaFocusHeadline(slug: AreaSlug): string {
   return AREA_FOCUS_HEADLINES[slug];
+}
+
+const AREA_STYLE_ORDER = [
+  'salsa',
+  'bachata',
+  'kizomba',
+  'zouk',
+  'tango-argentin',
+  'semba',
+  'west-coast-swing',
+] as const;
+
+/** Region spotlight cover line: total events + dance styles present (all styles, not pure-only). */
+export function buildAreaFocusSubheadline(events: MediaEvent[], area: AreaSlug): string {
+  const areaEvents = events.filter((e) => getAreaForEvent(e) === area);
+  const count = areaEvents.length;
+  const present = new Set<string>();
+  for (const event of areaEvents) {
+    for (const dance of event.dance_types || []) {
+      present.add(dance.slug);
+    }
+  }
+  const labels: string[] = [];
+  for (const slug of AREA_STYLE_ORDER) {
+    if (present.has(slug)) labels.push(getDanceType(slug).label_fr);
+  }
+  for (const slug of present) {
+    if (!AREA_STYLE_ORDER.includes(slug as (typeof AREA_STYLE_ORDER)[number])) {
+      labels.push(getDanceType(slug).label_fr);
+    }
+  }
+  const styles = labels.slice(0, 5).join(' · ');
+  const countLine = `${count} soirée${count > 1 ? 's' : ''}`;
+  return styles ? `${countLine} · ${styles}` : countLine;
 }
 

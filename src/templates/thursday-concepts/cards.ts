@@ -12,12 +12,21 @@ import type { MediaEvent } from '../../types';
 
 function resolveHighlightDance(
   event: MediaEvent,
-  highlightDanceSlug?: string
+  highlightDanceSlug?: string,
+  regionSpotlight?: boolean
 ): { slug: string; label_fr: string } | undefined {
   const types = event.dance_types ?? [];
   if (highlightDanceSlug) {
     const match = types.find((d) => d.slug === highlightDanceSlug);
     if (match) return match;
+  }
+  if (types.length === 0) return undefined;
+  if (regionSpotlight && types.length > 1) {
+    const label = types
+      .slice(0, 3)
+      .map((d) => d.label_fr)
+      .join(' · ');
+    return { slug: types[0].slug, label_fr: types.length > 3 ? `${label}…` : label };
   }
   return types[0];
 }
@@ -28,6 +37,8 @@ export interface ThursdayEventCardProps {
   total: number;
   /** Featured dance slug for spotlight / rare dance for autres-danses */
   highlightDanceSlug?: string;
+  /** Region spotlight: show all dance tags on the chip (mixed styles OK) */
+  regionSpotlight?: boolean;
 }
 
 /** B — Full-bleed photo card, overlay type (not Tuesday chrome) */
@@ -36,11 +47,13 @@ export function ThursdayEventCard({
   index,
   total,
   highlightDanceSlug,
+  regionSpotlight,
 }: ThursdayEventCardProps) {
   const startDt = parseEventStartDatetime(event.start_datetime);
   const imageSrc = event.image_url ? cacheBustUrl(event.image_url) : null;
-  const primaryDance = resolveHighlightDance(event, highlightDanceSlug);
+  const primaryDance = resolveHighlightDance(event, highlightDanceSlug, regionSpotlight);
   const accent = primaryDance ? getDanceType(primaryDance.slug).accent : colors.coral;
+  const chipFontSize = (primaryDance?.label_fr.length ?? 0) > 22 ? '34px' : '48px';
 
   return React.createElement(
     CarouselSlideLayout,
@@ -120,7 +133,7 @@ export function ThursdayEventCard({
                 style: {
                   fontFamily: typography.fontFamily,
                   fontWeight: 800,
-                  fontSize: '48px',
+                  fontSize: chipFontSize,
                   color: colors.bg,
                   background: accent,
                   padding: '22px 40px',
