@@ -1,0 +1,3 @@
+Font: DM Sans (Google Fonts + system fallbacks)
+Logo: embedded base64 in HTML (run embed-logo.mjs after changing email-logo.png)
+Fallback URL after deploy: https://www.latingo.fr/images/latingo-logo.png
