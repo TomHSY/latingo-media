@@ -10,6 +10,7 @@
     "render:week": "node scripts/run-tsx.mjs src/scripts/render-week.ts",
     "publish:real": "node scripts/run-tsx.mjs src/scripts/publish-real.ts",
     "publish:stories-today": "node scripts/run-tsx.mjs src/scripts/publish-stories-today.ts",
+    "seed:stories-manifest": "node scripts/run-tsx.mjs src/scripts/seed-stories-manifest.ts",
     "publish:carousel-if-scheduled": "node scripts/run-tsx.mjs src/scripts/publish-carousel-if-scheduled.ts",
     "publish:stories-if-scheduled": "node scripts/run-tsx.mjs src/scripts/publish-stories-if-scheduled.ts",
     "publish:cancelled-story": "node scripts/run-tsx.mjs src/scripts/publish-cancelled-story.ts",
@@ -25,7 +26,6 @@
     "test:api": "node scripts/run-tsx.mjs src/scripts/test-api.ts",
     "test:paris-time": "node scripts/run-tsx.mjs src/scripts/test-paris-time.ts",
     "test:stories-today": "node scripts/run-tsx.mjs src/scripts/test-stories-today.ts",
-    "merge:launch-lists": "node scripts/run-tsx.mjs src/scripts/merge-launch-lists.ts",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [],

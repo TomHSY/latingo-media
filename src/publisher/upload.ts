@@ -2,49 +2,86 @@
  * Upload images to Cloudflare R2 and return public URLs.
  * Converts PNG to JPEG before uploading (Meta requires JPEG).
  */
-import { S3Client, PutObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
+import { PutObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import sharp from 'sharp';
 import fs from 'fs';
 import path from 'path';
 import 'dotenv/config';
+import { getR2Client, getR2Bucket, getPublicUrl } from './r2';
 
-const s3 = new S3Client({
-  region: 'auto',
-  endpoint: `https://${process.env.R2_ACCOUNT_ID!}.r2.cloudflarestorage.com`,
-  credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
-  },
-});
+const MIN_JPEG_BYTES = 10_000;
+const STORY_MIN_WIDTH = 600;
+const STORY_MIN_HEIGHT = 600;
 
-const BUCKET = process.env.R2_BUCKET_NAME!;
-const PUBLIC_URL = process.env.R2_PUBLIC_URL!.replace(/\/$/, '');
+/** JPEG magic bytes FF D8 FF */
+function isJpegBuffer(buf: Buffer): boolean {
+  return buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff;
+}
+
+/** Validate JPEG before Meta fetch — catches empty/corrupt renders early. */
+export async function validateJpegBuffer(jpeg: Buffer, label: string): Promise<void> {
+  if (!isJpegBuffer(jpeg)) {
+    throw new Error(`${label}: not a valid JPEG (bad magic bytes, ${jpeg.length} bytes)`);
+  }
+  if (jpeg.length < MIN_JPEG_BYTES) {
+    throw new Error(`${label}: JPEG too small (${jpeg.length} bytes, min ${MIN_JPEG_BYTES})`);
+  }
+  const meta = await sharp(jpeg).metadata();
+  if (!meta.width || !meta.height) {
+    throw new Error(`${label}: could not read JPEG dimensions`);
+  }
+  if (meta.width < STORY_MIN_WIDTH || meta.height < STORY_MIN_HEIGHT) {
+    throw new Error(
+      `${label}: JPEG dimensions ${meta.width}x${meta.height} below minimum ${STORY_MIN_WIDTH}x${STORY_MIN_HEIGHT}`
+    );
+  }
+}
+
+/** Confirm the public R2 URL is fetchable before calling Meta. */
+export async function verifyPublicUrl(url: string, label: string): Promise<void> {
+  const res = await fetch(url, { method: 'HEAD' });
+  if (!res.ok) {
+    throw new Error(`${label}: public URL not reachable (${res.status} ${res.statusText}) — ${url}`);
+  }
+  const ct = res.headers.get('content-type') ?? '';
+  if (!ct.includes('image/jpeg') && !ct.includes('image/jpg')) {
+    throw new Error(`${label}: unexpected Content-Type "${ct}" — ${url}`);
+  }
+}
 
 /**
- * Convert a PNG file to JPEG buffer.
+ * Convert a PNG file to JPEG buffer with validation.
  */
 async function toJpeg(filePath: string): Promise<Buffer> {
-  return sharp(fs.readFileSync(filePath)).jpeg({ quality: 92 }).toBuffer();
+  const jpeg = await sharp(fs.readFileSync(filePath)).jpeg({ quality: 92 }).toBuffer();
+  await validateJpegBuffer(jpeg, path.basename(filePath));
+  return jpeg;
 }
 
 /**
  * Upload a single PNG file as JPEG to R2.
  * Returns the public URL.
  */
-export async function uploadImage(filePath: string, key: string): Promise<string> {
+export async function uploadImage(filePath: string, key: string, skipVerify = false): Promise<string> {
   const jpeg = await toJpeg(filePath);
   const r2Key = key.endsWith('.jpg') ? key : key.replace(/\.png$/, '.jpg');
 
-  await s3.send(
+  await getR2Client().send(
     new PutObjectCommand({
-      Bucket: BUCKET,
+      Bucket: getR2Bucket(),
       Key: r2Key,
       Body: jpeg,
       ContentType: 'image/jpeg',
     })
   );
 
-  return `${PUBLIC_URL}/${r2Key}`;
+  const url = getPublicUrl(r2Key);
+  if (!skipVerify) {
+    // Brief pause so CDN edge can serve the object before Meta fetches it.
+    await new Promise((r) => setTimeout(r, 3000));
+    await verifyPublicUrl(url, r2Key);
+  }
+  return url;
 }
 
 /**
@@ -63,7 +100,7 @@ export async function uploadImages(filePaths: string[], prefix: string): Promise
   return urls;
 }
 
-/** List object keys under an R2 prefix (for publish idempotency). */
+/** List object keys under an R2 prefix. */
 export async function listR2Keys(prefix: string): Promise<string[]> {
   const normalized = prefix.replace(/\/$/, '');
   const keys: string[] = [];
@@ -71,9 +108,9 @@ export async function listR2Keys(prefix: string): Promise<string[]> {
 
   try {
     do {
-      const response = await s3.send(
+      const response = await getR2Client().send(
         new ListObjectsV2Command({
-          Bucket: BUCKET,
+          Bucket: getR2Bucket(),
           Prefix: `${normalized}/`,
           ContinuationToken: continuationToken,
         })
@@ -93,4 +130,10 @@ export async function listR2Keys(prefix: string): Promise<string[]> {
   }
 
   return keys;
+}
+
+/** True when a render artifact exists at posts/{date}/stories-daily/{eventId}.jpg */
+export function hasR2JpegForEvent(existingKeys: string[], r2Prefix: string, eventId: string): boolean {
+  const suffix = `${r2Prefix}/${eventId}.jpg`;
+  return existingKeys.some((k) => k === suffix || k.endsWith(`/${eventId}.jpg`));
 }

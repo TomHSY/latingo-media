@@ -1,0 +1,65 @@
+name: Publish Stories Daily
+
+on:
+  schedule:
+    # Primary + backup slots for ~12:00 Paris (CEST = 10 UTC; CET = 11 UTC)
+    - cron: '0 10 * * *'
+    - cron: '0 11 * * *'
+    - cron: '0 12 * * *'
+  workflow_dispatch:
+    inputs:
+      event_id:
+        description: Optional event UUID — republish one story only
+        required: false
+        type: string
+      force:
+        description: Force all events (may duplicate already-posted stories on Instagram)
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: publish-stories-daily
+  cancel-in-progress: false
+
+jobs:
+  stories:
+    runs-on: ubuntu-latest
+    env:
+      TZ: Europe/Paris
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: Audit today's story events (no render)
+        env:
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: npm run test:stories-today
+
+      - name: Publish Ce Soir stories
+        env:
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          INSTAGRAM_USER_ID: ${{ secrets.INSTAGRAM_USER_ID }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DRY_RUN: ${{ secrets.DRY_RUN }}
+          FORCE_PUBLISH: ${{ github.event.inputs.force == 'true' && 'stories' || '' }}
+          STORY_EVENT_ID: ${{ github.event.inputs.event_id }}
+        run: npm run publish:stories-if-scheduled

@@ -148,6 +148,24 @@ Open printed R2 URLs in a browser before going live.
 
 ## GitHub Actions schedule
 
+### Publish Stories Daily (Ce Soir — preferred)
+
+[`publish-stories-daily.yml`](../.github/workflows/publish-stories-daily.yml) — dedicated workflow, separate concurrency group:
+
+| UTC cron | Paris (CEST) | Purpose |
+|----------|--------------|---------|
+| 10:00 | 12:00 | Primary stories slot |
+| 11:00 | 13:00 | Backup |
+| 12:00 | 14:00 | Backup |
+
+Manual: **Actions → Publish Stories Daily → Run workflow**. Optional `event_id` for one story; `force` only if you accept duplicates on Instagram.
+
+Resume after partial failure: re-run without `force` — reads `manifest.json` in R2, skips already-posted events, reuses cached JPEGs.
+
+### Publish Instagram (carousel + stories + Thursday)
+
+[`publish-instagram.yml`](../.github/workflows/publish-instagram.yml) — combined workflow at **:15 past 09–13, 17–19 UTC**. Stories step still runs here as backup; prefer **Publish Stories Daily** for reliability.
+
 Workflow runs at **10:00, 11:00, 12:00, 13:00 UTC** daily. Scripts check **Europe/Paris** before executing:
 
 | UTC cron | Paris (CEST summer) | Paris (CET winter) | Runs when guard passes |
@@ -235,13 +253,16 @@ If `api.latingo.fr` TLS fails on Ubuntu (unlikely), add a `NODE_EXTRA_CA_CERTS` 
 | Symptom | Likely cause |
 |---------|----------------|
 | Workflow exits 0 but nothing posted | `DRY_RUN=true` in secrets, or scheduled run skipped (see next row) |
-| Green scheduled run, no stories on Instagram | Logs show `Skipping stories — Paris time is …` — cron missed 12:00 Paris (CEST needs 10 UTC slot) |
+| Green scheduled run, no stories on Instagram | GitHub cron missed morning slots — use **Publish Stories Daily** workflow; check Actions run count vs expected 3/day |
+| Stories posted ~5h late (manual needed) | Same cron reliability issue — only 1 `publish-instagram` run/day instead of ~5; dedicated `publish-stories-daily.yml` mitigates |
+| Partial publish (e.g. 2/9) then workflow red | Meta 9004 on one story — remaining events skipped because old code aborted; **re-run resumes** via `manifest.json` in R2 |
+| Re-run skips all stories despite missing some on IG | Old R2 JPEG idempotency (fixed) — seed manifest for already-live stories, then re-run without `force` |
 | Carousel step skipped on manual run | Wrong workflow input — pick `carousel`, not `stories` |
 | OpenAI 403 in local dev | Corporate proxy — captions still work on GitHub Actions |
-| Duplicate posts | Re-ran workflow or both manual + scheduled same day |
+| Duplicate posts | Used `force=true` on workflow or `FORCE_PUBLISH=stories` when manifest already had entries |
 | Stories for wrong day | Stories always use **today Paris** — not weekend events |
-| `9007` / "media is not ready for publishing" | Instagram still processing container — fixed by polling `status_code` until `FINISHED` in `instagram.ts` |
-| Story fails with "Media download has failed" / code 9004 | R2 URL contained non-ASCII chars (e.g. accented city) — keys use event UUID only |
+| `9007` / "media is not ready for publishing" | Instagram still processing container — polling + retries in `instagram.ts` |
+| Story fails with "Media download has failed" / code 9004 | Meta couldn't fetch R2 JPEG — pre-flight HEAD check + 9004 retries; verify JPEG in R2 manually |
 | Missing story for an event shown in app | Run `npm run test:stories-today`; check `isoDateMismatch` flag — wrong `start_datetime` UTC vs Paris; ISO fallback may include it on next publish |
 
 ## Facebook

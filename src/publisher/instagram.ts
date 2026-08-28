@@ -74,6 +74,9 @@ async function waitForContainerReady(containerId: string): Promise<void> {
 
 function isTransientPublishError(message: string): boolean {
   return (
+    message.includes('9004') ||
+    message.includes('2207052') ||
+    message.includes('Media download has failed') ||
     message.includes('9007') ||
     message.includes('2207027') ||
     message.includes('An unknown error has occurred') ||
