@@ -1,0 +1,12 @@
+name = "latingo-instagram-cron"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+
+# Top of every hour UTC — worker checks Europe/Paris before dispatching.
+[triggers]
+crons = ["0 * * * *"]
+
+# Set via: wrangler secret put GITHUB_TOKEN
+#          wrangler secret put DISPATCH_SECRET
+[vars]
+GITHUB_REPO = "TomHSY/latingo-media"

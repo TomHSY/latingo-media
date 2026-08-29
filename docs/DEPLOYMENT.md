@@ -2,7 +2,7 @@
 
 Automated publishing: **weekly carousel** (Tuesday 14:00 Europe/Paris) and **daily stories** (every day 12:00 Europe/Paris, one story per event that day). Full Instagram editorial calendar (Wed app/founder, Thu lens rotation, empty Mon/Fri–Sun) lives in [strategy/CONTEXT.md](strategy/CONTEXT.md).
 
-Orchestration: [GitHub Actions](../.github/workflows/publish-instagram.yml) with Europe/Paris timezone guards.
+Orchestration: [Cloudflare Worker cron](../workers/instagram-cron/) → `repository_dispatch` → [GitHub Actions](../.github/workflows/). GitHub's built-in `schedule` cron is **not used** (unreliable).
 
 See also [PRD.md](PRD.md) content calendar and [ARCHITECTURE.md](ARCHITECTURE.md) pipeline overview.
 
@@ -85,6 +85,7 @@ Settings → Secrets and variables → Actions:
 | `R2_PUBLIC_URL` | Yes | No trailing slash |
 | `OPENAI_API_KEY` | Yes | Carousel captions only |
 | `DRY_RUN` | Yes | Start with `true`, then `false` after validation |
+| `DISPATCH_SECRET` | Yes | Shared secret for Cloudflare Worker → GitHub `repository_dispatch` (see below) |
 
 Not needed for Instagram v1: `FB_PAGE_*`, Google Drive vars.
 
@@ -146,44 +147,55 @@ Open printed R2 URLs in a browser before going live.
 | `publish:thursday-if-approved` | Publish Thursday lens after founder review |
 | `test:stories-today` | API-only audit of today's story event selection (no render) |
 
-## GitHub Actions schedule
+## Schedule — Cloudflare Worker (primary)
 
-### Publish Stories Daily (Ce Soir — preferred)
+GitHub's `schedule` cron is best-effort and often misses morning slots. A [Cloudflare Worker](../workers/instagram-cron/) runs **every hour** (UTC), checks **Europe/Paris**, and triggers GitHub via `repository_dispatch`.
 
-[`publish-stories-daily.yml`](../.github/workflows/publish-stories-daily.yml) — dedicated workflow, separate concurrency group:
+| Paris time | Event type | Workflow |
+|------------|------------|----------|
+| Daily **12:00** | `stories-daily` | [Publish Stories Daily](../.github/workflows/publish-stories-daily.yml) |
+| **Tuesday 14:00** | `instagram-carousel` | [Publish Instagram](../.github/workflows/publish-instagram.yml) (carousel) |
+| **Wednesday 20:00** | `instagram-thursday-preview` | Publish Instagram (preview only, `DRY_RUN=true`) |
 
-| UTC cron | Paris (CEST) | Purpose |
-|----------|--------------|---------|
-| 10:00 | 12:00 | Primary stories slot |
-| 11:00 | 13:00 | Backup |
-| 12:00 | 14:00 | Backup |
+**Not scheduled:** Thursday publish (`job=thursday`) and gallery — manual founder approval only.
 
-Manual: **Actions → Publish Stories Daily → Run workflow**. Optional `event_id` for one story; `force` only if you accept duplicates on Instagram.
+### Worker setup (one-time)
 
-Resume after partial failure: re-run without `force` — reads `manifest.json` in R2, skips already-posted events, reuses cached JPEGs.
+See [workers/instagram-cron/README.md](../workers/instagram-cron/README.md). Summary:
 
-### Publish Instagram (carousel + stories + Thursday)
+1. Create GitHub fine-grained PAT (`Actions: Read and write` on `latingo-media`)
+2. Add GitHub secret `DISPATCH_SECRET` (random string)
+3. Deploy worker:
+   ```bash
+   cd workers/instagram-cron && npm install
+   npx wrangler login
+   npx wrangler secret put GITHUB_TOKEN
+   npx wrangler secret put DISPATCH_SECRET   # same value as GitHub secret
+   npm run deploy
+   ```
+4. Verify: `curl https://latingo-instagram-cron.<subdomain>.workers.dev/` shows Paris clock
 
-[`publish-instagram.yml`](../.github/workflows/publish-instagram.yml) — combined workflow at **:15 past 09–13, 17–19 UTC**. Stories step still runs here as backup; prefer **Publish Stories Daily** for reliability.
+Manual test trigger:
+```bash
+curl -X POST https://latingo-instagram-cron.<subdomain>.workers.dev/trigger \
+  -H "Authorization: Bearer YOUR_DISPATCH_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"event_type":"stories-daily"}'
+```
 
-Workflow runs at **10:00, 11:00, 12:00, 13:00 UTC** daily. Scripts check **Europe/Paris** before executing:
+Until the worker is deployed, **nothing runs automatically** — use **Actions → Run workflow** manually.
 
-| UTC cron | Paris (CEST summer) | Paris (CET winter) | Runs when guard passes |
-|----------|---------------------|--------------------|-------------------------|
-| 10:00 | 12:00 | 11:00 | Stories (summer) |
-| 11:00 | 13:00 | 12:00 | Stories (winter) |
-| 12:00 | 14:00 | 13:00 | Carousel (Tue summer) |
-| 13:00 | 15:00 | 14:00 | Carousel (Tue winter) |
+### GitHub Actions workflows (execution only)
 
-| Job | Paris time | Guard |
-|-----|------------|-------|
-| Carousel | Tuesday 14:00 | `shouldRunCarousel()` |
-| Stories | Daily 12:00 | `shouldRunStories()` |
-| Thursday preview | Wednesday ~20:00 | `shouldRunThursdayPreview()` |
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| **Publish Stories Daily** | `repository_dispatch` / manual | Ce Soir stories |
+| **Publish Instagram** | `repository_dispatch` / manual | Carousel, Thu preview, manual Thu publish |
+| **Publish Cancelled Story** | `repository_dispatch` from app | One-off cancelled event |
 
-Extra cron fires exit 0 with a skip message when Paris hour does not match — this is expected.
+Manual: **Actions → Publish Stories Daily** or **Publish Instagram** → Run workflow.
 
-Manual trigger: **Actions → Publish Instagram → Run workflow** with job `carousel`, `stories`, `thursday-preview`, `thursday`, or `thursday-gallery`.
+Stories resume after partial failure: re-run without `force` — reads `manifest.json` in R2, skips already-posted events, reuses cached JPEGs.
 
 ## Thursday lens (preview + manual publish)
 
@@ -253,7 +265,7 @@ If `api.latingo.fr` TLS fails on Ubuntu (unlikely), add a `NODE_EXTRA_CA_CERTS` 
 | Symptom | Likely cause |
 |---------|----------------|
 | Workflow exits 0 but nothing posted | `DRY_RUN=true` in secrets, or scheduled run skipped (see next row) |
-| Green scheduled run, no stories on Instagram | GitHub cron missed morning slots — use **Publish Stories Daily** workflow; check Actions run count vs expected 3/day |
+| Green scheduled run, no stories on Instagram | Cloudflare Worker not deployed or `DISPATCH_SECRET` mismatch — check Worker logs (`wrangler tail`) |
 | Stories posted ~5h late (manual needed) | Same cron reliability issue — only 1 `publish-instagram` run/day instead of ~5; dedicated `publish-stories-daily.yml` mitigates |
 | Partial publish (e.g. 2/9) then workflow red | Meta 9004 on one story — remaining events skipped because old code aborted; **re-run resumes** via `manifest.json` in R2 |
 | Re-run skips all stories despite missing some on IG | Old R2 JPEG idempotency (fixed) — seed manifest for already-live stories, then re-run without `force` |

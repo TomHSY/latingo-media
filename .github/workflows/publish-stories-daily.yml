@@ -1,11 +1,8 @@
 name: Publish Stories Daily
 
 on:
-  schedule:
-    # Primary + backup slots for ~12:00 Paris (CEST = 10 UTC; CET = 11 UTC)
-    - cron: '0 10 * * *'
-    - cron: '0 11 * * *'
-    - cron: '0 12 * * *'
+  repository_dispatch:
+    types: [stories-daily]
   workflow_dispatch:
     inputs:
       event_id:
@@ -28,6 +25,14 @@ jobs:
     env:
       TZ: Europe/Paris
     steps:
+      - name: Verify dispatch secret
+        if: github.event_name == 'repository_dispatch'
+        run: |
+          if [ "${{ github.event.client_payload.dispatch_secret }}" != "${{ secrets.DISPATCH_SECRET }}" ]; then
+            echo "::error::Invalid or missing dispatch_secret in client_payload"
+            exit 1
+          fi
+
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
@@ -60,6 +65,6 @@ jobs:
           R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           DRY_RUN: ${{ secrets.DRY_RUN }}
-          FORCE_PUBLISH: ${{ github.event.inputs.force == 'true' && 'stories' || '' }}
+          FORCE_PUBLISH: ${{ github.event_name == 'repository_dispatch' && 'stories' || (github.event.inputs.force == 'true' && 'stories') || '' }}
           STORY_EVENT_ID: ${{ github.event.inputs.event_id }}
         run: npm run publish:stories-if-scheduled
