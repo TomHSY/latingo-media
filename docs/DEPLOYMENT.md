@@ -1,6 +1,6 @@
 # Deployment — Instagram automation
 
-Automated publishing: **weekly carousel** (Tuesday 14:00 Europe/Paris) and **daily stories** (every day 12:00 Europe/Paris, one story per event that day). Full Instagram editorial calendar (Wed app/founder, Thu lens rotation, empty Mon/Fri–Sun) lives in [strategy/CONTEXT.md](strategy/CONTEXT.md).
+Automated publishing: **weekly carousel** (Tuesday 18:00 Europe/Paris) and **daily stories** (Mon–Fri 17:00, Sat–Sun 12:00 Europe/Paris, one story per event that day). Full Instagram editorial calendar (Wed app/founder, Thu lens rotation archived, empty Mon/Fri–Sun feed) lives in [strategy/CONTEXT.md](strategy/CONTEXT.md).
 
 Orchestration: [Cloudflare Worker cron](../workers/instagram-cron/) → `repository_dispatch` → [GitHub Actions](../.github/workflows/). GitHub's built-in `schedule` cron is **not used** (unreliable).
 
@@ -10,10 +10,10 @@ See also [PRD.md](PRD.md) content calendar and [ARCHITECTURE.md](ARCHITECTURE.md
 
 | Workflow job | When (automatic) | Content | Instagram output |
 |--------------|------------------|---------|------------------|
-| **carousel** | Tuesday 14:00 Paris | Weekend digest (Fri–Sun events) | 1 feed carousel post |
+| **carousel** | Tuesday 18:00 Paris | Weekend digest (Fri–Sun events) | 1 feed carousel post |
 
 Cover slide always shows **Monday–Sunday** of the current Paris calendar week (e.g. `22–28 JUIN`), even though event slides are picked from the weekend only.
-| **stories** | Daily 12:00 Paris | All events on **that calendar day** in Paris | 1 story per event (0 if none) |
+| **stories** | Mon–Fri 17:00, Sat–Sun 12:00 Paris | All events on **that calendar day** in Paris | 1 story per event (0 if none) |
 | **thursday-preview** | Wednesday ~20:00 Paris | Thursday lens render only | 0 Instagram posts — R2 preview URLs in Actions log |
 | **thursday** | Manual only (`workflow_dispatch`) | Thursday lens feed post | 1 feed post (carousel or single image) — **founder must trigger after review** |
 | **thursday-gallery** | Manual only (`workflow_dispatch`) | All 6 Thursday variants (dry-run) | 0 Instagram posts — artifact ZIP for inspection |
@@ -98,7 +98,7 @@ Use this for a first real post **outside** the automatic schedule (e.g. Tuesday 
 3. **Actions → Publish Instagram → Run workflow**:
    - Choose **`carousel`** → posts weekend digest carousel to Instagram.
    - Choose **`stories`** → posts one story per event **today** (Paris). Run separately if needed.
-4. Manual runs set `FORCE_PUBLISH` — **schedule guards are bypassed** (you do not need to wait for 14:00 or 12:00).
+4. Manual runs set `FORCE_PUBLISH` — **schedule guards are bypassed** (you do not need to wait for 18:00 or 17:00).
 5. Check Instagram feed / stories after each run.
 6. Re-running the same job the same day **posts again** (no deduplication).
 
@@ -139,8 +139,8 @@ Open printed R2 URLs in a browser before going live.
 |--------|---------|
 | `publish:real` | Full carousel pipeline (+ stories unless `CAROUSEL_ONLY=true`) |
 | `publish:stories-today` | One story per event today (Europe/Paris) |
-| `publish:carousel-if-scheduled` | Tue 14:00 Paris → carousel only |
-| `publish:stories-if-scheduled` | Daily 12:00 Paris → stories |
+| `publish:carousel-if-scheduled` | Tue 18:00 Paris → carousel only |
+| `publish:stories-if-scheduled` | Mon–Fri 17:00 / Sat–Sun 12:00 Paris → stories |
 | `render:thursday-preview` | Render Thursday lens PNGs (local / CI preview) |
 | `render:thursday-gallery` | Render all 6 Thursday variants + manifest (inspection) |
 | `render:thursday-preview-if-scheduled` | Wed ~20:00 Paris → preview render only |
@@ -153,11 +153,11 @@ GitHub's `schedule` cron is best-effort and often misses morning slots. A [Cloud
 
 | Paris time | Event type | Workflow |
 |------------|------------|----------|
-| Daily **12:00** | `stories-daily` | [Publish Stories Daily](../.github/workflows/publish-stories-daily.yml) |
-| **Tuesday 14:00** | `instagram-carousel` | [Publish Instagram](../.github/workflows/publish-instagram.yml) (carousel) |
-| **Wednesday 20:00** | `instagram-thursday-preview` | Publish Instagram (preview only, `DRY_RUN=true`) |
+| Mon–Fri **17:00** | `stories-daily` | [Publish Stories Daily](../.github/workflows/publish-stories-daily.yml) |
+| Sat–Sun **12:00** | `stories-daily` | Same — earlier so daytime weekend events are not already over |
+| **Tuesday 18:00** | `instagram-carousel` | [Publish Instagram](../.github/workflows/publish-instagram.yml) (carousel) |
 
-**Not scheduled:** Thursday publish (`job=thursday`) and gallery — manual founder approval only.
+**Not scheduled:** Thursday lens (preview + publish) is archived from cron — still available manually via Actions if you resume it.
 
 ### Worker setup (one-time)
 

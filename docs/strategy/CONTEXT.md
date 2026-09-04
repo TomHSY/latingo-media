@@ -63,7 +63,7 @@ All times **Europe/Paris**. Locked Aug 2026 — see [DECISIONS.md](DECISIONS.md)
 
 | Schedule | Format | Content | Status |
 |----------|--------|---------|--------|
-| Daily 12:00 | Story (×N) | One CE SOIR story per event that day (0 if none) | Automated — [DEPLOYMENT.md](../DEPLOYMENT.md) |
+| Daily 17:00 (12:00 Sat–Sun) | Story (×N) | One CE SOIR story per event that day (0 if none) | Automated — [DEPLOYMENT.md](../DEPLOYMENT.md) |
 | As needed | Story | ANNULÉE when that day has cancelled events | Spec’d; optional with daily batch |
 
 ### Feed (~3 posts/week)
@@ -71,7 +71,7 @@ All times **Europe/Paris**. Locked Aug 2026 — see [DECISIONS.md](DECISIONS.md)
 | Day | Format | Content | Who |
 |-----|--------|---------|-----|
 | **Mon** | — | No feed post | — |
-| **Tue 14:00** | Carousel (4:5) | "Où danser ce week-end?" — 4 of N | Automated |
+| **Tue 18:00** | Carousel (4:5) | "Où danser ce week-end?" — 4 of N | Automated |
 | **Wed** | Feed / Reel | App functionality, guide, or demo **or** founder thoughts (rotate; skip if thin) | Manual |
 | **Thu** | Feed (lens) | Dance / area / stats rotation — see below | Engine renders Wed; **founder approves Thu before publish** |
 | **Fri–Sun** | — | No fixed feed post; stories carry the weekend | Optional one-off Reel only if strong IRL/product clip |

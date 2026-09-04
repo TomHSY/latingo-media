@@ -4,7 +4,6 @@ on:
   repository_dispatch:
     types:
       - instagram-carousel
-      - instagram-thursday-preview
   workflow_dispatch:
     inputs:
       job:
@@ -94,8 +93,8 @@ jobs:
           STORY_EVENT_ID: ${{ github.event.inputs.event_id }}
         run: npm run publish:stories-if-scheduled
 
-      - name: Thursday preview (manual or Cloudflare cron)
-        if: github.event.inputs.job == 'thursday-preview' || github.event.action == 'instagram-thursday-preview'
+      - name: Thursday preview (manual only — archived from cron)
+        if: github.event.inputs.job == 'thursday-preview'
         env:
           ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
@@ -105,7 +104,7 @@ jobs:
           R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
           R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
           DRY_RUN: 'true'
-          FORCE_PUBLISH: ${{ github.event.action == 'instagram-thursday-preview' && 'thursday-preview' || github.event.inputs.job == 'thursday-preview' && 'thursday-preview' || '' }}
+          FORCE_PUBLISH: ${{ github.event.inputs.job == 'thursday-preview' && 'thursday-preview' || '' }}
         run: npm run render:thursday-preview-if-scheduled
 
       - name: Thursday publish (manual only — founder approved)

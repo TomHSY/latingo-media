@@ -24,8 +24,8 @@ All times **Europe/Paris**. Full editorial rules: [strategy/CONTEXT.md](strategy
 
 | Schedule | Format | Content |
 |----------|--------|---------|
-| Daily 12:00 | Story (×N) | CE SOIR — one story per event that day; ANNULÉE when relevant |
-| Tuesday 14:00 | Carousel (4:5) | "Où danser ce week-end?" — 4 selected events |
+| Daily 17:00 (12:00 Sat–Sun) | Story (×N) | CE SOIR — one story per event that day; ANNULÉE when relevant |
+| Tuesday 18:00 | Carousel (4:5) | "Où danser ce week-end?" — 4 selected events |
 | Wednesday | Feed / Reel | App guide/demo **or** founder thoughts (manual; skip if thin) |
 | Thursday | Feed (lens) | Dance → area → dance → stats → … — engine renders Wed; **founder approves before publish** |
 | Mon, Fri–Sun | — | No fixed feed post |

@@ -6,11 +6,10 @@ Reliable schedule trigger for GitHub Actions Instagram pipelines. Replaces GitHu
 
 | Event type | When | GitHub workflow |
 |------------|------|-----------------|
-| `stories-daily` | Daily 12:00 | Publish Stories Daily |
-| `instagram-carousel` | Tuesday 14:00 | Publish Instagram (carousel step) |
-| `instagram-thursday-preview` | Wednesday 20:00 | Publish Instagram (preview step) |
+| `stories-daily` | Mon–Fri **17:00**, Sat–Sun **12:00** | Publish Stories Daily |
+| `instagram-carousel` | Tuesday **18:00** | Publish Instagram (carousel step) |
 
-Thursday **publish** stays manual (founder approval).
+Thursday lens is **archived** from cron (manual via Actions when you resume).
 
 ## One-time setup
 

@@ -1,5 +1,5 @@
 /**
- * Runs publish-stories-today when schedule matches (daily 12:00 Europe/Paris)
+ * Runs publish-stories-today when schedule matches (Mon–Fri 17:00 / Sat–Sun 12:00 Europe/Paris)
  * or when FORCE_PUBLISH=stories.
  */
 import { spawnSync } from 'child_process';
@@ -17,12 +17,12 @@ const force = process.env.FORCE_PUBLISH === 'stories';
 if (!force && !shouldRunStories()) {
   const paris = getParisDateTime();
   console.log(
-    `⏭ Skipping stories — Paris time is ${paris.hour}:00 (need 12:00). Set FORCE_PUBLISH=stories to override.`
+    `⏭ Skipping stories — Paris time is ${paris.weekday} ${paris.hour}:00 (need Mon–Fri 17:00 or Sat–Sun 12:00). Set FORCE_PUBLISH=stories to override.`
   );
   process.exit(0);
 }
 
-  console.log(force ? '🚀 Force-running daily stories publish...\n' : '🚀 Scheduled stories publish (10:00–18:00 Paris window)...\n');
+  console.log(force ? '🚀 Force-running daily stories publish...\n' : '🚀 Scheduled stories publish (Mon–Fri 17:00 / Sat–Sun 12:00 Paris)...\n');
 
 const result = spawnSync(process.execPath, [runTsx, publishStoriesToday], {
   stdio: 'inherit',

@@ -3,9 +3,10 @@
  * Runs hourly (UTC), checks Europe/Paris, dispatches repository_dispatch when due.
  *
  * Scheduled jobs (Paris time):
- *   - stories-daily:        every day 12:00
- *   - instagram-carousel:   Tuesday 14:00
- *   - instagram-thursday-preview: Wednesday 20:00
+ *   - stories-daily:      Mon–Fri 17:00, Sat–Sun 12:00
+ *   - instagram-carousel: Tuesday 18:00
+ *
+ * Thursday lens (preview + publish) archived — manual via Actions when resumed.
  *
  * Manual test: POST /trigger with Authorization: Bearer <DISPATCH_SECRET>
  *   body: { "event_type": "stories-daily" }
@@ -21,7 +22,6 @@ export interface Env {
 export const EVENT_TYPES = {
   STORIES: 'stories-daily',
   CAROUSEL: 'instagram-carousel',
-  THURSDAY_PREVIEW: 'instagram-thursday-preview',
 } as const;
 
 export type DispatchEventType = (typeof EVENT_TYPES)[keyof typeof EVENT_TYPES];
@@ -56,15 +56,14 @@ export function jobsDueAt(clock: ParisClock): DispatchEventType[] {
   if (clock.minute !== 0) return [];
 
   const jobs: DispatchEventType[] = [];
+  const weekend = clock.weekday === 'Sat' || clock.weekday === 'Sun';
+  const storiesHour = weekend ? 12 : 17;
 
-  if (clock.hour === 12) {
+  if (clock.hour === storiesHour) {
     jobs.push(EVENT_TYPES.STORIES);
   }
-  if (clock.weekday === 'Tue' && clock.hour === 14) {
+  if (clock.weekday === 'Tue' && clock.hour === 18) {
     jobs.push(EVENT_TYPES.CAROUSEL);
-  }
-  if (clock.weekday === 'Wed' && clock.hour === 20) {
-    jobs.push(EVENT_TYPES.THURSDAY_PREVIEW);
   }
 
   return jobs;

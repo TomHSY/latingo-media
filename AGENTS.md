@@ -23,8 +23,8 @@ npx playwright install chromium
 | `npm run publish:real` | Render → R2 → Instagram carousel (+ stories unless scheduled) |
 | `npm run publish:stories-today` | One story per event today (Europe/Paris); resumes via R2 manifest |
 | `npm run seed:stories-manifest` | Seed manifest for partial-run recovery |
-| `npm run publish:carousel-if-scheduled` | Tue 14:00 Paris → carousel only (GitHub Actions) |
-| `npm run publish:stories-if-scheduled` | Daily 12:00 Paris → stories (Cloudflare Worker cron) |
+| `npm run publish:carousel-if-scheduled` | Tue 18:00 Paris → carousel only (GitHub Actions) |
+| `npm run publish:stories-if-scheduled` | Mon–Fri 17:00 / Sat–Sun 12:00 Paris → stories (Cloudflare Worker cron) |
 | `npm run render:thursday-preview` | Thursday lens preview (local, DRY_RUN) |
 | `npm run render:thursday-gallery` | All 6 Thursday variants for template inspection |
 | `npm run publish:thursday-if-approved` | Publish Thursday lens after founder review |

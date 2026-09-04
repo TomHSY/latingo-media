@@ -18,7 +18,7 @@ Locked technical and product choices. Add new rows when making irreversible deci
 | 2026-08-21 | Own-channel Meta publishing is sanctioned | Publishing to **our own** IG/FB via Graph API is in scope. Distinct from latingo-app's killed **WhatsApp group automation** (third-party groups, ban risk). See latingo-app `DECISIONS.md` 2026-08-21. |
 | 2026-08-21 | Lead with completeness, not user count | Marketing copy uses event-completeness ("500+ soirées") not install/user counts until scale justifies it. Aligns with neutral brand voice. |
 | 2026-08-21 | Facebook Page publish — enable next | Code exists in `src/publisher/facebook.ts`; deferred only until `FB_PAGE_ACCESS_TOKEN` + `FB_PAGE_ID` are set. Promote from "future" to near-term. |
-| 2026-08-25 | Instagram calendar: ~3 feed/week + daily stories | Daily 12:00 CE SOIR (+ ANNULÉE as needed). Tue 14:00 carousel. Wed app/founder (manual). Thu lens rotation. Mon/Fri–Sun no fixed feed. No daily “new event” on IG — discovery stays in-app. |
+| 2026-09-04 | IG publish times: stories 17:00 weekdays / 12:00 weekend; carousel Tue 18:00 | After-work / pre-soirée window for weekday stories; weekend noon for afternoon events. Tue 18:00 feed for likes. Thursday lens archived from cron. |
 | 2026-08-25 | Thursday lens cycle | `dance → area → dance → stats → area → dance → area → stats` (repeat). Prefer dance/area; stats every 4th week in the cycle. Avoid same-week event overlap with Tue carousel. |
 | 2026-08-25 | Thursday event window | Thu–Sun only (Europe/Paris), forward-looking. Not full ISO week. Exclude Tuesday carousel event IDs before selection. |
 | 2026-08-25 | Thursday geography | **Area** not city: BAB, Landes, Béarn, Euskadi. City → area mapping in `src/config/areas.ts`. |
