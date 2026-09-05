@@ -51,10 +51,11 @@ export function getParisClock(now = new Date()): ParisClock {
   return { weekday, hour, minute };
 }
 
-/** Which jobs should fire at this Paris clock (top-of-hour only). */
+/**
+ * Jobs due in this Paris hour. Minute is ignored: Cloudflare hourly cron
+ * is often delayed past :00, so requiring minute===0 skipped the slot entirely.
+ */
 export function jobsDueAt(clock: ParisClock): DispatchEventType[] {
-  if (clock.minute !== 0) return [];
-
   const jobs: DispatchEventType[] = [];
   const weekend = clock.weekday === 'Sat' || clock.weekday === 'Sun';
   const storiesHour = weekend ? 12 : 17;
