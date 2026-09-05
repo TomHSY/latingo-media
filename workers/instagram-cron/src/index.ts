@@ -13,7 +13,9 @@
  */
 
 export interface Env {
-  GITHUB_TOKEN: string;
+  /** Prefer GH_REPO_TOKEN (wrangler); GITHUB_TOKEN kept for dashboard setups */
+  GITHUB_TOKEN?: string;
+  GH_REPO_TOKEN?: string;
   GITHUB_REPO: string;
   DISPATCH_SECRET: string;
 }
@@ -71,10 +73,15 @@ export function jobsDueAt(clock: ParisClock): DispatchEventType[] {
 }
 
 export async function dispatchGitHub(env: Env, eventType: DispatchEventType): Promise<void> {
+  const token = env.GH_REPO_TOKEN ?? env.GITHUB_TOKEN;
+  if (!token) {
+    throw new Error('Missing GH_REPO_TOKEN or GITHUB_TOKEN Worker secret');
+  }
+
   const res = await fetch(`https://api.github.com/repos/${env.GITHUB_REPO}/dispatches`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${env.GITHUB_TOKEN}`,
+      Authorization: `Bearer ${token}`,
       Accept: 'application/vnd.github+json',
       'Content-Type': 'application/json',
       'User-Agent': 'latingo-instagram-cron',
