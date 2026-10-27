@@ -21,7 +21,8 @@ concurrency:
 
 jobs:
   stories:
-    runs-on: ubuntu-latest
+    # Playwright 1.60 has no Chromium build for Ubuntu 26.04 (ubuntu-latest as of Oct 2026).
+    runs-on: ubuntu-24.04
     env:
       TZ: Europe/Paris
     steps:
